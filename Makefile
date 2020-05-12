@@ -3,19 +3,19 @@ include $(abspath $(PROJECT_DIR)/build/automation/init.mk)
 
 # ==============================================================================
 
-project-config:
-	make docker-config
+create-instance:
+	# TODO: Create an RDS instance from our Terraform module
+	# INPUT:
+	#		- instance name
 
-project-build: project-config
+download-sql-dump:
+	# TODO: Downlaod the latest DoS database SQL dump file
+	# INPUT:
+	#		- link to an SQL dump file
 
-project-start:
-	make docker-compose-start
-
-project-stop:
-	make docker-compose-stop
-
-project-log:
-	make docker-compose-log
+populate-database:
+	# TODO: Deploy k8s job to run the scripts agains the RDS instance
+	#		- instance name / location
 
 # ==============================================================================
 
