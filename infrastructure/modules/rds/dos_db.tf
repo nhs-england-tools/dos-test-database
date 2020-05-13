@@ -10,7 +10,7 @@ module "db" {
     allocated_storage = 10
 
     name     = var.db_name
-    username = "user"
+    username = "postgres"
     password = "YourPwdShouldBeLongAndSecure!"
     port     = "5432"
 
@@ -25,7 +25,6 @@ module "db" {
     backup_retention_period = 0
 
     tags = {
-        Owner       = "user"
         Name        = "${var.service_prefix}-${var.cloud_env_type}-db"
         BillingCode = var.billing_code_tag
         Environment = var.environment_tag
@@ -40,7 +39,7 @@ module "db" {
   family = "postgres11"
 
   # DB option group
-  major_engine_version = "11.6"
+  major_engine_version = "11"
 
   # Snapshot name upon DB deletion
   final_snapshot_identifier = "${var.service_name}-dos-db"
