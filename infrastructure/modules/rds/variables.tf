@@ -6,27 +6,7 @@ variable "version_tag" {
   default     = "1.0"
 }
 
-############################
-# AWS COMMON
-############################
-variable "aws_region" {
-  description = "The AWS region"
-}
-# variable "aws_profile" {
-#   description = "The AWS profile"
-# }
 variable "cloud_env_type" { description = "The cloud enviroment type e.g. nonprod, prod" }
-
-############################
-# TERRAFORM COMMON
-############################
-variable "terraform_platform_state_s3_bucket" {
-  description = "Name of the S3 bucket used to store the Terraform state"
-}
-
-variable "vpc_terraform_state_key" {
-  description = "The VPC key in the terraform state bucket"
-}
 
 ####################################################################################
 # TEXAS COMMON
@@ -42,9 +22,7 @@ variable "environment_tag" {
 variable "service_prefix" {
   description = "Prefix used for naming resources"
 }
-variable "security-groups-k8s_terraform_state_key" {
-  description = "The security-groups-k8s key in the terraform state bucket"
-}
+
 variable "nhs_programme_name" {
   description = "The NHS Programme using the resource"
 }

@@ -1,16 +1,3 @@
-
-resource "aws_db_subnet_group" "db_subnet_group" {
-  name       = var.db_subnet_group_name
-  subnet_ids = var.private_subnets_ids
-  tags = {
-    Name        = "${var.service_prefix}-${var.cloud_env_type}-db"
-    BillingCode = var.billing_code_tag
-    Environment = var.environment_tag
-    Version     = var.version_tag
-    Service     = var.service_name
-  }
-}
-
 module "db" {
     source = "terraform-aws-modules/rds/aws"
     version = "~> 2.0"
@@ -48,7 +35,6 @@ module "db" {
 
   # DB subnet group (create own)
   subnet_ids = var.private_subnets_ids
-  
 
   # DB parameter group
   family = "postgres11"
@@ -57,7 +43,7 @@ module "db" {
   major_engine_version = "11.6"
 
   # Snapshot name upon DB deletion
-  final_snapshot_identifier = "${var.service_name}_dos_db"
+  final_snapshot_identifier = "${var.service_name}-dos-db"
 
   # Database Deletion Protection
   deletion_protection = false

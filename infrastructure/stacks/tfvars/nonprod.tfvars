@@ -19,10 +19,10 @@ cloud_env_type = "nonprod"
 ####################################################################################
 billing_code_tag   = "k8s-nonprod.texasplatform.uk"
 environment_tag    = "lk8s-nonprod.texasplatform.uk"
-nhs_programme_name = "uec-dos-api-cs"
-nhs_project_name   = "uec-dos-api-cs"
-service_name       = "uec-dos-api-cs"
-service_prefix     = "uec-dos-api-cs"
+nhs_programme_name = "uec-pu-dos-extract"
+nhs_project_name   = "uec-pu-dos-extract"
+service_name       = "uec-pu-dos-extract"
+service_prefix     = "uec-pu-dos-extract"
 
 ####################################################################################
 # SERVICE COMMON
