@@ -42,5 +42,5 @@ vpc_terraform_state_key = "vpc/terraform.tfstate"
 ####################################################################################
 # SERVICE DOS RDS POSTGRES
 ####################################################################################
-db_name                       = "postgres"
-db_max_connections            = "100"
+db_name               = "postgres"
+db_max_connections    = "100"
