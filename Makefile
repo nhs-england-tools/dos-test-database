@@ -13,10 +13,11 @@ create-instance: ## Creates RDS Instance - mandatory: INSTANCE_NAME=[name];
 	-var 'instance_db_name=$(INSTANCE_NAME)'"
 	echo -e "\n\033[1mRDS Instance Details\033[00m"
 	echo -e "\nEndpoint:"
-	aws rds describe-db-instances --db-instance-identifier=test-rds-instance-nonprod | jq -r '.DBInstances[0].Endpoint.Address'
+	aws rds describe-db-instances --db-instance-identifier=$(INSTANCE_NAME)-nonprod | jq -r '.DBInstances[0].Endpoint.Address'
 	echo -e "\nUsername:"
-	aws rds describe-db-instances --db-instance-identifier=test-rds-instance-nonprod | jq -r '.DBInstances[0].MasterUsername'
+	aws rds describe-db-instances --db-instance-identifier=$(INSTANCE_NAME)-nonprod | jq -r '.DBInstances[0].MasterUsername'
 	echo -e "\nPassword Secret Endpoint:"
+	echo $(INSTANCE_NAME)-nonprod-dos_db_password
 
 download-sql-dump:
 	# TODO: Downlaod the latest DoS database SQL dump file

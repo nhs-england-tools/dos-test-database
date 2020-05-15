@@ -11,7 +11,7 @@ module "db" {
 
     name     = var.db_name
     username = "postgres"
-    password = "YourPwdShouldBeLongAndSecure!"
+    password = aws_secretsmanager_secret_version.dos_test_db_password.secret_string
     port     = "5432"
 
     #iam_database_authentication_enabled = true
