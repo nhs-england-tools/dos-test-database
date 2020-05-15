@@ -7,7 +7,7 @@ create-instance: ## Creates RDS Instance - mandatory: INSTANCE_NAME=[name];
 	# TODO: Create an RDS instance from our Terraform module
 	# INPUT:
 	#		- instance name
-	make terraform-apply \
+	make terraform-apply-auto-approve \
 	STACKS=service \
 	OPTS="-var-file=../tfvars/nonprod.tfvars \
 	-var 'instance_db_name=$(INSTANCE_NAME)'"
