@@ -1,5 +1,5 @@
 resource "aws_security_group" "rds-postgres-sg" {
-  name        = "${var.service_prefix}-${var.cloud_env_type}-db-sg"
+  name        = "${var.instance_db_name}-${var.cloud_env_type}-db-sg"
   description = "Allow connection by appointed rds postgres clients"
   vpc_id      = data.terraform_remote_state.vpc.outputs.vpc_id
 
@@ -20,6 +20,7 @@ module "dos_db" {
   service_prefix     = var.service_prefix
 
   db_name                 = var.db_name
+  instance_db_name        = var.instance_db_name
   private_subnets_ids     = data.terraform_remote_state.vpc.outputs.private_subnets
   cloud_env_type          = var.cloud_env_type
 

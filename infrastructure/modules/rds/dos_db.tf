@@ -2,7 +2,7 @@ module "db" {
     source = "terraform-aws-modules/rds/aws"
     version = "~> 2.0"
 
-    identifier = "${var.service_prefix}-${var.cloud_env_type}-db"
+    identifier = "${var.instance_db_name}-${var.cloud_env_type}"
 
     engine = "postgres"
     engine_version = "11.6"
@@ -25,7 +25,7 @@ module "db" {
     backup_retention_period = 0
 
     tags = {
-        Name        = "${var.service_prefix}-${var.cloud_env_type}-db"
+        Name        = "${var.instance_db_name}-${var.cloud_env_type}"
         BillingCode = var.billing_code_tag
         Environment = var.environment_tag
         Version     = var.version_tag
@@ -42,7 +42,7 @@ module "db" {
   major_engine_version = "11"
 
   # Snapshot name upon DB deletion
-  final_snapshot_identifier = "${var.service_name}-dos-db"
+  final_snapshot_identifier = var.instance_db_name
 
   # Database Deletion Protection
   deletion_protection = false

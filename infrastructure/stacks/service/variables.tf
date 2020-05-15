@@ -62,6 +62,8 @@ variable "service_name" {
 ############################
 
 # The following variables are all read from the variables-<environment>.tfvars.json file
+variable "instance_db_name" {}
+
 variable "db_name" {}
 
 variable "db_max_connections" {}
