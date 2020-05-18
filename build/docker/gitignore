@@ -1,0 +1,4 @@
+*.sql.gz
+*.sql
+.version
+Dockerfile.effective
