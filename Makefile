@@ -23,6 +23,12 @@ download-sql-dump:
 	# TODO: Downlaod the latest DoS database SQL dump file
 	# INPUT:
 	#		- link to an SQL dump file
+	make aws-s3-download URI=nhsd-texasplatform-service-dos-lk8s-nonprod/dos-pg-dump-5-4-0-clean-PU.sql.gz \
+	FILE=/project/build/docker/data/assets/sql/dos-dump.sql.gz
+	gzip -d build/docker/data/assets/sql/dos-dump.sql
+
+build-dos-database-image: ##	
+	make docker-build NAME=data
 
 populate-database:
 	# TODO: Deploy k8s job to run the scripts agains the RDS instance
