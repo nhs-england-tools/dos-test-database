@@ -33,11 +33,11 @@ download-sql-dump: ## Downloads the latest DoS database dump and gunzips it
 build-dos-database-image: ## Builds dos database docker container
 	make docker-build NAME=data
 
-create-dos-database-image-repository:
+create-dos-database-image-repository: ## Creates the ECR repository
 	make docker-login
 	make docker-create-repository NAME=data
 
-push-dos-database-image:
+push-dos-database-image: ## Pushes the database image to the ECR repository
 	make docker-login
 	make docker-push NAME=data
 
