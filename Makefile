@@ -30,8 +30,16 @@ download-sql-dump: ## Downloads the latest DoS database dump and gunzips it
 	FILE=/project/build/docker/data/assets/sql/dos-dump.sql.gz
 	gzip -d build/docker/data/assets/sql/dos-dump.sql
 
-build-dos-database-image: ## Builds dos database docker container 
+build-dos-database-image: ## Builds dos database docker container
 	make docker-build NAME=data
+
+create-dos-database-image-repository:
+	make docker-login
+	make docker-create-repository NAME=data
+
+push-dos-database-image:
+	make docker-login
+	make docker-push NAME=data
 
 populate-database:
 	# TODO: Deploy k8s job to run the scripts agains the RDS instance
