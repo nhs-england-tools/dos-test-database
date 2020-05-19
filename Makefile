@@ -19,7 +19,7 @@ create-instance: ## Creates RDS Instance - mandatory: INSTANCE_NAME=[name];
 	echo -e "\nPassword Secret Endpoint:"
 	echo $(INSTANCE_NAME)-nonprod-dos_db_password
 
-download-sql-dump:
+download-sql-dump: ## Downloads the latest DoS database dump and gunzips it
 	# TODO: Downlaod the latest DoS database SQL dump file
 	# INPUT:
 	#		- link to an SQL dump file
@@ -30,13 +30,17 @@ download-sql-dump:
 	FILE=/project/build/docker/data/assets/sql/dos-dump.sql.gz
 	gzip -d build/docker/data/assets/sql/dos-dump.sql
 
-build-dos-database-image: ##	
+build-dos-database-image: ## Builds dos database docker container 
 	make docker-build NAME=data
 
 populate-database:
 	# TODO: Deploy k8s job to run the scripts agains the RDS instance
 	#		- instance name / location
 
+help: ## Show all make targets
+	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
+
 # ==============================================================================
 
 .SILENT:
+.DEFAULT_GOAL := help
