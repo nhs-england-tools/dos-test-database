@@ -3,5 +3,3 @@
 .python-version
 .vscode
 *.code-workspace
-*.sql.gz
-dos-dump.sql.gz
