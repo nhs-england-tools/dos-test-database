@@ -22,7 +22,7 @@ download-sql-dump: # Downloads the latest DoS database dump and gunzips it
 	make aws-s3-download \
 		URI=nhsd-texasplatform-service-dos-lk8s-nonprod/$(DOS_DB_FILE) \
 		FILE=/project/build/docker/data/assets/sql/dos-dump.sql.gz
-	gzip -d $(DOCKER_DIR)/data/assets/sql/dos-dump.sql
+
 
 build-dos-database-image: # Builds dos database docker container
 	make docker-build NAME=data
@@ -34,6 +34,14 @@ create-dos-database-image-repository: # Creates the ECR repository
 push-dos-database-image: # Pushes the database image to the ECR repository
 	make docker-login
 	make docker-push NAME=data
+
+docker-populate-local-database-test:
+	make docker-compose-start-single-service NAME=test-db YML=$(DOCKER_DIR)/docker-compose-test.yml
+	make docker-compose-start-single-service NAME=data YML=$(DOCKER_DIR)/docker-compose-test.yml
+
+docker-clean-local-test-database:
+	docker stop $(docker container ls | grep -P '.*test-database/data.*'| awk '{ print $1 }')
+	docker container rm $(docker container ls -a | grep -P '.*test-database/data.*'| awk '{ print $1 }')
 
 populate-database:
 	# TODO: Deploy k8s job to run the scripts agains the RDS instance

@@ -1,6 +1,24 @@
 version: "3.7"
 
 services:
+  test-db:
+    image: $DOCKER_REGISTRY/data:latest
+    container_name: test-db
+    hostname: test-db
+    environment:
+      PROFILE: $PROFILE
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGPASSWORD: postgres
+    ports:
+      - "5432:5432"
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    networks:
+      default:
+        aliases:
+          - test-db.$PROJECT_NAME_SHORT.local
+
   data:
     image: $DOCKER_REGISTRY/data:latest
     container_name: data
@@ -10,13 +28,13 @@ services:
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      PGPASSWORD: ${PGPASSWORD}
-      PGHOST: ${PGHOST}
-      PGPORT: ${PGPORT}
-      PGUSERNAME: ${PGUSERNAME}
-      PGDATABASENAME: ${PGDATABASENAME}
+      PGPASSWORD: postgres
+      PGHOST: test-db.$PROJECT_NAME_SHORT.local
+      PGPORT: 5432
+      PGUSERNAME: postgres
+      PGDATABASENAME: postgres
       SQL_DIR: /sql
-    command: ["echo", "PGPORT = $PGPORT"]
+    command: ["sh", "/script/load_dos_db.sh"]
     working_dir: /
     networks:
       default:
