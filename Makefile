@@ -1,7 +1,6 @@
 PROJECT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 include $(abspath $(PROJECT_DIR)/build/automation/init.mk)
 
-DOS_DB_FILE=$(shell aws s3 ls s3://nhsd-texasplatform-service-dos-lk8s-nonprod | sort | grep "dos-pg-dump-.*-clean-PU.sql.gz" | tail -n 1 | awk '{ print $$4 }')
 
 # ==============================================================================
 
@@ -19,6 +18,7 @@ create-instance: # Creates RDS Instance - mandatory: INSTANCE_NAME=[name];
 	echo $(INSTANCE_NAME)-nonprod-dos_db_password
 
 download-sql-dump: # Downloads the latest DoS database dump and gunzips it
+	DOS_DB_FILE=$(shell aws s3 ls s3://nhsd-texasplatform-service-dos-lk8s-nonprod | sort | grep "dos-pg-dump-.*-clean-PU.sql.gz" | tail -n 1 | awk '{ print $$4 }')
 	make aws-s3-download \
 		URI=nhsd-texasplatform-service-dos-lk8s-nonprod/$(DOS_DB_FILE) \
 		FILE=/project/build/docker/data/assets/sql/dos-dump.sql.gz
