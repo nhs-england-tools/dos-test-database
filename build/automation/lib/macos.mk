@@ -50,6 +50,7 @@ macos-install-essential:: ## Install essential development dependencies - option
 	brew $$install gawk ||:
 	brew $$install git ||:
 	brew $$install git-crypt ||:
+	brew $$install git-secrets ||:
 	brew $$install gnu-sed ||:
 	brew $$install gnu-tar ||:
 	brew $$install gnutls ||:
@@ -160,6 +161,7 @@ macos-check:: ## Check if the development dependencies are installed
 	brew list gawk ||:
 	brew list git ||:
 	brew list git-crypt ||:
+	brew list git-secrets ||:
 	brew list gnu-sed ||:
 	brew list gnu-tar ||:
 	brew list gnutls ||:
@@ -344,7 +346,7 @@ _macos-config-command-line:
 		echo "# Variables"
 		echo "export PATH=\$$HOME/bin:/usr/local/opt/coreutils/libexec/gnubin:/usr/local/opt/findutils/libexec/gnubin:/usr/local/opt/gnu-sed/libexec/gnubin:/usr/local/opt/gnu-tar/libexec/gnubin:/usr/local/opt/grep/libexec/gnubin:/usr/local/opt/make/libexec/gnubin:/usr/local/Cellar/python/$$(python3 --version | grep -Eo '[0-9.]*')/Frameworks/Python.framework/Versions/Current/bin:\$$PATH"
 		echo "export GPG_TTY=\$$(tty)"
-		echo "export KUBECONFIG=\$$(ls -1 ~/.kube/configs/lk8s-nonprod-kubeconfig) 2> /dev/null"
+		echo "export KUBECONFIG=~/.kube/configs/lk8s-nonprod-kubeconfig 2> /dev/null"
 		echo
 		echo "# env: Python"
 		echo "export PATH=\$$HOME/.pyenv/bin:\$$PATH"
