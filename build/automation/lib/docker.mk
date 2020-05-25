@@ -9,16 +9,16 @@ DOCKER_LIBRARY_REGISTRY = nhsd
 DOCKER_ALPINE_VERSION = 3.11.6
 DOCKER_COMPOSER_VERSION = 1.10.6
 DOCKER_DOTNET_VERSION = 3.1.201
-DOCKER_ELASTICSEARCH_VERSION = 7.6.2
-DOCKER_GRADLE_VERSION = 6.3.0-jdk13
+DOCKER_ELASTICSEARCH_VERSION = 7.7.0
+DOCKER_GRADLE_VERSION = 6.4.1-jdk14
 DOCKER_LOCALSTACK_VERSION = 0.11.1
-DOCKER_MAVEN_VERSION = 3.6.3-jdk-13
+DOCKER_MAVEN_VERSION = 3.6.3-jdk-14
 DOCKER_NGINX_VERSION = 1.18.0
-DOCKER_NODE_VERSION = 13.14.0
-DOCKER_OPENJDK_VERSION = 13.0.2-jdk
-DOCKER_POSTGRES_VERSION = 12.2
+DOCKER_NODE_VERSION = 14.3.0
+DOCKER_OPENJDK_VERSION = 14.0.1-jdk
+DOCKER_POSTGRES_VERSION = 12.3
 DOCKER_PYTHON_VERSION = $(PYTHON_VERSION)-slim
-DOCKER_TERRAFORM_VERSION = $(or $(TEXAS_TERRAFORM_VERSION), 0.12.23)
+DOCKER_TERRAFORM_VERSION = $(or $(TEXAS_TERRAFORM_VERSION), 0.12.25)
 
 DOCKER_LIBRARY_NGINX_VERSION = $(shell cat $(DOCKER_LIBRARY_DIR)/nginx/VERSION 2> /dev/null)
 DOCKER_LIBRARY_POSTGRES_VERSION = $(shell cat $(DOCKER_LIBRARY_DIR)/postgres/VERSION 2> /dev/null)
@@ -100,12 +100,12 @@ docker-login: ### Log into the Docker registry - optional: DOCKER_USERNAME,DOCKE
 	fi
 
 docker-create-repository: ### Create Docker repository to store an image - mandatory: NAME
-	make -s docker-run-tools ARGS="$$(echo $(AWSCLI) | grep awslocal > /dev/null 2>&1 && echo '--env LOCALSTACK_HOST=localstack' ||:)" CMD=" \
+	make -s docker-run-tools ARGS="$$(echo $(AWSCLI) | grep awslocal > /dev/null 2>&1 && echo '--env LOCALSTACK_HOST=$(LOCALSTACK_HOST)' ||:)" CMD=" \
 		$(AWSCLI) ecr create-repository \
 			--repository-name $(PROJECT_GROUP)/$(PROJECT_NAME)/$(NAME) \
 			--tags Key=Service,Value=$(TEXAS_SERVICE_TAG) \
 	"
-	make -s docker-run-tools ARGS="$$(echo $(AWSCLI) | grep awslocal > /dev/null 2>&1 && echo '--env LOCALSTACK_HOST=localstack' ||:)" CMD=" \
+	make -s docker-run-tools ARGS="$$(echo $(AWSCLI) | grep awslocal > /dev/null 2>&1 && echo '--env LOCALSTACK_HOST=$(LOCALSTACK_HOST)' ||:)" CMD=" \
 		$(AWSCLI) ecr set-repository-policy \
 			--repository-name $(PROJECT_GROUP)/$(PROJECT_NAME)/$(NAME) \
 			--policy-text file://$(LIB_DIR_REL)/aws/ecr-policy.json \
@@ -258,31 +258,6 @@ docker-image-load: ### Load image from a flat file - mandatory: NAME; optional: 
 		version=$$(make docker-get-image-version)
 	fi
 	gunzip -c $$dir/$(NAME)-$$version-image.tar.gz | docker load
-
-# ==============================================================================
-
-docker-compose-start: ### Start Docker Compose - optional: YML=[docker-compose.yml, defaults to $(DOCKER_COMPOSE_YML)]
-	make docker-config
-	docker-compose \
-		--file $(or $(YML), $(DOCKER_COMPOSE_YML)) \
-		up --no-build --remove-orphans --detach
-
-docker-compose-start-single-service: ### Start Docker Compose - mandatory: NAME=[service name]; optional: YML=[docker-compose.yml, defaults to $(DOCKER_COMPOSE_YML)]
-	make docker-config
-	docker-compose \
-		--file $(or $(YML), $(DOCKER_COMPOSE_YML)) \
-		up --no-build --remove-orphans --detach $(NAME)
-
-docker-compose-stop: ### Stop Docker Compose - optional: YML=[docker-compose.yml, defaults to $(DOCKER_COMPOSE_YML)]
-	docker-compose \
-		--file $(or $(YML), $(DOCKER_COMPOSE_YML)) \
-		stop
-	docker rm --force --volumes $$(docker ps --all --quiet) 2> /dev/null ||:
-
-docker-compose-log: ### Log Docker Compose output - optional: DO_NOT_FOLLOW=true,YML=[docker-compose.yml, defaults to $(DOCKER_COMPOSE_YML)]
-	docker-compose \
-		--file $(or $(YML), $(DOCKER_COMPOSE_YML)) \
-		logs $$(echo $(DO_NOT_FOLLOW) | grep -E 'true|yes|y|on|1|TRUE|YES|Y|ON' > /dev/null 2>&1 && : || echo "--follow")
 
 # ==============================================================================
 
@@ -590,6 +565,37 @@ docker-run-tools: ### Run tools (Python) container - mandatory: CMD; optional: S
 
 # ==============================================================================
 
+docker-compose-start: ### Start Docker Compose - optional: YML=[docker-compose.yml, defaults to $(DOCKER_COMPOSE_YML)],PARALLEL=true
+	make docker-config
+	yml=$$(make _docker-get-docker-compose-yml YML=$(YML))
+	docker-compose \
+		--file $$yml \
+		up --no-build --detach
+
+docker-compose-start-single-service: ### Start Docker Compose - mandatory: NAME=[service name]; optional: YML=[docker-compose.yml, defaults to $(DOCKER_COMPOSE_YML)],PARALLEL=true
+	make docker-config
+	yml=$$(make _docker-get-docker-compose-yml YML=$(YML))
+	docker-compose \
+		--file $$yml \
+		up --no-build --detach $(NAME)
+
+docker-compose-stop: ### Stop Docker Compose - optional: YML=[docker-compose.yml, defaults to $(DOCKER_COMPOSE_YML)],PARALLEL=true,ALL=true
+	make docker-config
+	yml=$$(make _docker-get-docker-compose-yml YML=$(YML))
+	docker-compose \
+		--file $$yml \
+		stop
+	docker rm --force --volumes $$(docker ps --all --filter "name=.*$(BUILD_ID).*" --quiet) 2> /dev/null ||:
+	[[ "$(ALL)" =~ ^(true|yes|y|on|1|TRUE|YES|Y|ON)$$ ]] && docker rm --force --volumes $$(docker ps --all --quiet) 2> /dev/null ||:
+
+docker-compose-log: ### Log Docker Compose output - optional: DO_NOT_FOLLOW=true,YML=[docker-compose.yml, defaults to $(DOCKER_COMPOSE_YML)],PARALLEL=true
+	yml=$$(make _docker-get-docker-compose-yml YML=$(YML))
+	docker-compose \
+		--file $$yml \
+		logs $$(echo $(DO_NOT_FOLLOW) | grep -E 'true|yes|y|on|1|TRUE|YES|Y|ON' > /dev/null 2>&1 && : || echo "--follow")
+
+# ==============================================================================
+
 _docker-get-dir:
 	if [ -n "$(DOCKER_CUSTOM_DIR)" ] && [ -d $(DOCKER_CUSTOM_DIR)/$(NAME) ]; then
 		echo $(DOCKER_CUSTOM_DIR)/$(NAME)
@@ -618,10 +624,23 @@ _docker-get-variables-from-file:
 _docker-get-login-password:
 	echo $(DOCKER_PASSWORD)
 
+_docker-get-docker-compose-yml:
+	yml=$(or $(YML), $(DOCKER_COMPOSE_YML))
+	if [ "$(BUILD_ID)" != 0 ]; then
+		make -s docker-run-tools ARGS="--env BUILD_ID=$(BUILD_ID)" CMD=" \
+			$(BIN_DIR_REL)/docker-compose-processor \
+				$$(echo $$yml | sed "s;$(PROJECT_DIR);;g") \
+				$(TMP_DIR_REL)/docker-compose-$(BUILD_ID).yml \
+		"
+		yml=$(TMP_DIR)/docker-compose-$(BUILD_ID).yml
+	fi
+	echo $$yml
+
 # ==============================================================================
 
 .SILENT: \
 	_docker-get-dir \
+	_docker-get-docker-compose-yml \
 	_docker-get-reg \
 	_docker-get-login-password \
 	_docker-get-variables-from-file \
