@@ -6,3 +6,7 @@ PROJECT_NAME_SHORT = tdb
 
 TEXAS_ROLE_PREFIX = UEC
 TEXAS_SERVICE_TAG = $(PROJECT_GROUP_SHORT)
+
+# ==============================================================================
+
+DOS_DATABASE_VERSION := 5-4-0
