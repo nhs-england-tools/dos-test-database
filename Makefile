@@ -4,6 +4,7 @@ include $(abspath $(PROJECT_DIR)/build/automation/init.mk)
 # ==============================================================================
 
 download: project-config # Download DoS database dump file
+	eval $$(make aws-assume-role-export-variables)
 	make aws-s3-download \
 		URI=nhsd-texasplatform-service-dos-lk8s-nonprod/dos-pg-dump-$(DOS_DATABASE_VERSION)-clean-PU.sql.gz \
 		FILE=build/docker/data/assets/sql/dos-database-dump.sql.gz
