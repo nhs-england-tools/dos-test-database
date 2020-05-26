@@ -1,83 +1,33 @@
-version: "3.7"
+version: "3.8"
 
 services:
-  # service:
-  #   image: $DOCKER_REGISTRY/service:latest
-  #   container_name: service
-  #   hostname: service
-  #   environment:
-  #     PROFILE: $PROFILE
-  #   ports:
-  #     - "8443:8443"
-  #   networks:
-  #     default:
-  #       aliases:
-  #         - service.$PROJECT_NAME_SHORT.local
-
-  python:
-    image: python:latest
-    container_name: python
-    hostname: python
+  data:
+    image: $DOCKER_REGISTRY/data:latest
+    container_name: data
+    hostname: data
     environment:
-      PROFILE: $PROFILE
-      PIP_TARGET: /tmp/.packages
-      PYTHONPATH: /tmp/.packages
-      XDG_CACHE_HOME: /tmp/.cache
-    volumes:
-      - $PROJECT_DIR:/project
-      - $HOME/.python/pip/packages:/tmp/.packages
-      - $HOME/.python/pip/cache:/tmp/.cache/pip
-    user: $USER_ID:$GROUP_ID
-    working_dir: /project/application
-    command: sh -c "pip install django"
+      DB_HOST: database.$PROJECT_NAME_SHORT.local
+      WAIT_FOR: database.$PROJECT_NAME_SHORT.local:5432
+      ON_ERROR_STOP: "no"
+    command: ["scripts"]
     networks:
       default:
         aliases:
-          - python.$PROJECT_NAME_SHORT.local
+          - data.$PROJECT_NAME_SHORT.local
+    depends_on:
+      - database
 
-  mock:
-    image: jamesdbloom/mockserver:latest
-    container_name: mock
-    hostname: mock
-    stdin_open: true
-    tty: true
+  database:
+    image: nhsd/postgres:latest
+    container_name: database
+    hostname: database
+    command: ["postgres"]
     ports:
-      - "1080:1080"
-      - "1090:1090"
+      - 5432:5432
     networks:
       default:
         aliases:
-          - mock.$PROJECT_NAME_SHORT.local
-
-  mail:
-    image: mailhog/mailhog:latest
-    container_name: mail
-    hostname: mail
-    ports:
-      - "1025:1025"
-      - "8025:8025"
-    networks:
-      default:
-        aliases:
-          - mail.$PROJECT_NAME_SHORT.local
-
-  browser:
-    image: selenium/standalone-chrome${DOCKER_BROWSER_DEBUG}:latest
-    container_name: browser
-    hostname: browser
-    environment:
-      JAVA_OPTS: "-Xmx512m -Dselenium.LOGGER.level=ALL"
-    volumes:
-      - /dev/shm:/dev/shm
-    ports:
-      - "4444:4444"
-      - "5900:5900"
-    networks:
-      default:
-        aliases:
-          - browser.$PROJECT_NAME_SHORT.local
-
-  # TODO: jmeter
+          - database.$PROJECT_NAME_SHORT.local
 
 networks:
   default:
