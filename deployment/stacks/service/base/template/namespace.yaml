@@ -4,4 +4,4 @@ metadata:
   name: NAMESPACE_TO_BE_REPLACED
   labels:
     ttl: K8S_TTL_TO_REPLACE
-    name: NAMESPACE_TO_BE_REPLACED
+    project-group: PROJECT_GROUP_SHORT_TO_REPLACE

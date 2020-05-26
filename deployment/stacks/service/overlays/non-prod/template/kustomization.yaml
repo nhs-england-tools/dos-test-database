@@ -1,9 +1,7 @@
 bases:
   - ../../base
 
-namespace: NAMESPACE_TO_BE_REPLACED
+namespace: K8S_APP_NAMESPACE_TO_REPLACE
 
-configMapGenerator:
-  - name: configmap-common
-    literals:
-      - AWS_REGION=eu-west-2
+commonLabels:
+  env: PROFILE_TO_REPLACE
