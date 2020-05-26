@@ -1,0 +1,9 @@
+bases:
+  - ../../base
+
+namespace: NAMESPACE_TO_BE_REPLACED
+
+configMapGenerator:
+  - name: configmap-common
+    literals:
+      - AWS_REGION=eu-west-2

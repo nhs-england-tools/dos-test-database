@@ -4,17 +4,12 @@ kind: Kustomization
 
 # list of Resource Config to be Applied
 resources:
-- ../base/namespace.yaml
-- ../base/net-policy.yaml
-- ../base/default-deny-ingress.yaml
-- ../base/extract-job-deployment.yaml
-- ../base/upload-job-deployment.yaml
+  - ../base/namespace.yaml
+  - ../base/net-policy.yaml
+  - ../base/default-deny-ingress.yaml
+  - ../base/execute-sql-in-rds-job.yaml
 
 images:
-- name: extract-job
-  newName: 461183108257.dkr.ecr.eu-west-2.amazonaws.com/uec/profile-updater/dos-data-export/extract-job
-  newTag: EXTRACT_IMAGE_TAG
-- name: upload-job
-  newName: 461183108257.dkr.ecr.eu-west-2.amazonaws.com/uec/profile-updater/dos-data-export/upload-job
-  newTag: UPLOAD_IMAGE_TAG
-
+  - name: postgres
+    newName: nhsd #find location of postgres image
+    newTag: EXECUTE_SQL_IN_RDS

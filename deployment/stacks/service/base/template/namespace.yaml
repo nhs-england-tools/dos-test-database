@@ -3,5 +3,5 @@ kind: Namespace
 metadata:
   name: NAMESPACE_TO_BE_REPLACED
   labels:
+    ttl: K8S_TTL_TO_REPLACE
     name: NAMESPACE_TO_BE_REPLACED
-

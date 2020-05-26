@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ddc-pu-execute-sql-in-rds-job
+  labels:
+    name: ddc-pu-execute-sql-in-rds-job
+  spec:
+    jobTemplate:
+      spec:
+        template:
+          metadata:
+            labels:
+              app: ddc-pu-execute-sql-in-rds-job
+              name: ddc-pu-execute-sql-in-rds-job-spec
+          spec:
+            containers:
+              - image: postgres
+                imagePullPolicy: Always
+                name: ddc-pu-execute-sql-in-rds-job
+                resources:
+                  requests:
+                    cpu: "500m"
+                    memory: "200Mi"
+                  limits:
+                    cpu: "1"
+                    memory: "800Mi"
+            restartPolicy: Never

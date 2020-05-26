@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ddc-pu-execute-sql-in-rds-job-net-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: ddc-pu-execute-sql-in-rds-job
+  policyTypes:
+    - Egress
+    - Ingress
+    egress:
+    - to: []
+      ports:
+      # Allow access to Postgres Database
+      - protocol: TCP
+        port: 5432
+    ingress:
+    - from: []
+      ports:
+        #Others
+        - protocol: TCP
+          port: 8443
+        - protocol: TCP
+          port: 443
