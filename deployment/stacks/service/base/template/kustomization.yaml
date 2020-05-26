@@ -5,8 +5,8 @@ kind: Kustomization
 # list of Resource Config to be Applied
 resources:
   - ../base/namespace.yaml
-  - ../base/net-policy.yaml
-  - ../base/default-deny-ingress.yaml
+  - ../base/net-policies/network-policy.yaml
+  - ../base/net-policies/default-deny-ingress.yaml
   - ../base/execute-sql-in-rds-job.yaml
 
 images:
