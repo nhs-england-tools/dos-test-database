@@ -1,0 +1,35 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: ddc-pu-dos-data-extract-job
+  labels:
+    name: ddc-pu-dos-data-extract-job
+spec:
+  schedule: EXTRACT_SCHEDULE
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: ddc-pu-dos-data-export
+            name: ddc-pu-dos-data-extract-job-spec
+        spec:
+          containers:
+          - image: extract-job
+            imagePullPolicy: Always
+            name: ddc-pu-dos-data-extract-job
+            envFrom:
+            - configMapRef:
+                name: configmap-common
+            - configMapRef:
+                name: configmap-extract
+            resources:
+              requests:
+                cpu: "500m"
+                memory: "200Mi"
+              limits:
+                cpu: "1"
+                memory: "800Mi"
+          restartPolicy: OnFailure
+      backoffLimit: 3

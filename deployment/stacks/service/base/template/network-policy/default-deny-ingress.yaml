@@ -1,0 +1,10 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pu-dos-data-export-default-deny-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: ddc-pu-dos-data-export
+  policyTypes:
+  - Ingress
