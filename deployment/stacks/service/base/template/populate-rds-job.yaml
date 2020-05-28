@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: PROJECT_GROUP_SHORT_TO_REPLACE-PROJECT_NAME_SHORT_TO_REPLACE-K8S_JOB_NAME_TO_REPLACE
+  labels:
+    name: PROJECT_GROUP_SHORT_TO_REPLACE-PROJECT_NAME_SHORT_TO_REPLACE-K8S_JOB_NAME_TO_REPLACE
+  spec:
+    containers:
+      - name: PROJECT_GROUP_SHORT_TO_REPLACE-PROJECT_NAME_SHORT_TO_REPLACE-K8S_JOB_NAME_TO_REPLACE
+        image: data
+        imagePullPolicy: Always
+        command: ["scripts"]
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "200Mi"
+          limits:
+            cpu: "1"
+            memory: "800Mi"
+    restartPolicy: Never
+  backofflimit: 0
