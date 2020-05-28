@@ -1,13 +1,18 @@
 resources:
   - ../base/namespace.yaml
-  - ../base/network-policies/network-policy.yaml
+  - ../base/network-policies/allow-egress.yml
+    ../base/network-policies/allow-external-ingress.yaml
   - ../base/network-policies/default-deny-ingress.yaml
-  - ../base/sql-to-rds-job.yaml
+  - ../base/populate-rds-job.yaml
 
 configMapGenerator:
-  - name: configmap-common
+  - name: PROJECT_GROUP_SHORT_TO_REPLACE-PROJECT_NAME_SHORT_TO_REPLACE-K8S_JOB_NAME_TO_REPLACE-configmap
     literals:
       - PROFILE=PROFILE_TO_REPLACE
+      - DB_NAME=DB_NAME_TO_REPLACE
+      - DB_HOST=DB_HOST_TO_REPLACE
+      - DB_USERNAME=DB_USERNAME_TO_REPLACE
+      - DB_PASSWORD=DB_PASSWORD_TO_REPLACE
 
 images:
   - name: 461183108257.dkr.ecr.eu-west-2.amazonaws.com/uec/dos/test-database/data

@@ -2,7 +2,7 @@ bases:
   - ../../../base/effective
 
 patchesStrategicMerge:
-  - sample-service-customisation.yaml
+  - ../../../base/populate-rds-job.yaml
 
 namespace: K8S_APP_NAMESPACE_TO_REPLACE
 

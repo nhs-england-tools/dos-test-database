@@ -9,4 +9,6 @@ TEXAS_SERVICE_TAG = $(PROJECT_GROUP_SHORT)
 
 # ==============================================================================
 
+K8S_JOB_NAME = populate-rds-job
+
 DOS_DATABASE_VERSION := 5-4-0

@@ -9,15 +9,24 @@ cd "$CDIR"
 # NB: this isn't filled in by the common pipeline scripts: instead, we supply this in Jenkinsfile DEPLOYMENT_FILE
 OVERLAY=${1?You must pass in the name of the overlay you wish to use}
 
-NAMESPACE="pu-jobs-${ENV}"
+NAMESPACE="dos-db-2-rds-${ENV}"
 OVERLAY_FOLDER="overlays/${OVERLAY}/"
 
 cp base/template/kustomization.yaml base/kustomization.yaml
 cp base/template/namespace.yaml base/namespace.yaml
-cp base/template/execute-sql-in-rds-job.yaml base/execute-sql-in-rds-job.yaml
+cp base/template/sql-to-rds-job.yaml base/sql-to-rds-job.yaml
 cp ${OVERLAY_FOLDER}template/kustomization.yaml ${OVERLAY_FOLDER}kustomization.yaml
+
+sed -i "s/NAMESPACE_TO_BE_REPLACED/${NAMESPACE}/g" base/namespace.yaml
+sed -i "s/NAMESPACE_TO_BE_REPLACED/${NAMESPACE}/g" base/namespace.yaml
+sed -i "s/NAMESPACE_TO_BE_REPLACED/${NAMESPACE}/g" ${OVERLAY_FOLDER}kustomization.yaml
+
+
 
 echo "Running kubernetes in folder '${OVERLAY_FOLDER}', which contains:"
 ls -l ${OVERLAY_FOLDER}
+
+
+
 
 eval "kustomize build ${OVERLAY_FOLDER} | kubectl apply -f -"
