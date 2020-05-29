@@ -2,7 +2,6 @@ resources:
   - namespace.yaml
   - network-policies/allow-egress.yaml
   - network-policies/allow-external-ingress.yaml
-  - network-policies/default-deny-ingress.yaml
   - populate-rds-job.yaml
 
 configMapGenerator:
