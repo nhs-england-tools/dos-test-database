@@ -1,10 +1,7 @@
 bases:
   - ../../base
 
-patchesStrategicMerge:
-  - ../../../base/populate-rds-job.yaml
-
-namespace: K8S_APP_NAMESPACE_TO_REPLACE
+namespace: PROJECT_GROUP_SHORT_TO_REPLACE-PROJECT_NAME_SHORT_TO_REPLACE-K8S_JOB_NAME_TO_REPLACE
 
 commonLabels:
   env: PROFILE_TO_REPLACE

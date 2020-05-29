@@ -6,9 +6,9 @@ spec:
   podSelector:
     matchLabels:
       app: PROJECT_GROUP_SHORT_TO_REPLACE-PROJECT_NAME_SHORT_TO_REPLACE-K8S_JOB_NAME_TO_REPLACE
-    egress:
-      - to: []
-        ports:
-          # Allow access to Postgres Database
-          - protocol: TCP
-            port: DB_PORT_TO_REPLACE
+  egress:
+    - to: []
+      ports:
+        # Allow access to RDS Postgres Database
+        - protocol: TCP
+          port: DB_PORT_TO_REPLACE
