@@ -1,6 +1,6 @@
 PROGRAMME = uec
-PROJECT_GROUP = uec/dos
-PROJECT_GROUP_SHORT = uec-dos
+PROJECT_GROUP = uec/dos-api
+PROJECT_GROUP_SHORT = uec-dos-api
 PROJECT_NAME = test-database
 PROJECT_NAME_SHORT = tdb
 

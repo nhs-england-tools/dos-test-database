@@ -15,14 +15,25 @@ resource "aws_security_group" "rds-postgres-sg" {
   }
 }
 
-module "dos_db" {
-  source             = "../../modules/rds"
-  service_prefix     = var.service_prefix
+# INGRESS TO RDS POSTGRES FROM EKS #
+resource "aws_security_group_rule" "rds_postgres_ingress_from_eks_worker" {
+  type                     = "ingress"
+  from_port                = var.db_port
+  to_port                  = var.db_port
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.rds-postgres-sg.id
+  source_security_group_id = data.terraform_remote_state.security-groups-k8s.outputs.eks_worker_additional_sg_id
+  description              = "Allow access in from Eks-worker to rds postgres"
+}
 
-  db_name                 = var.db_name
-  instance_db_name        = var.instance_db_name
-  private_subnets_ids     = data.terraform_remote_state.vpc.outputs.private_subnets
-  cloud_env_type          = var.cloud_env_type
+module "dos_db" {
+  source         = "../../modules/rds"
+  service_prefix = var.service_prefix
+
+  db_name             = var.db_name
+  instance_db_name    = var.instance_db_name
+  private_subnets_ids = data.terraform_remote_state.vpc.outputs.private_subnets
+  cloud_env_type      = var.cloud_env_type
 
 
   billing_code_tag   = var.billing_code_tag
