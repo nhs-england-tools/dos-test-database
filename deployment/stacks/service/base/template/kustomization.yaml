@@ -15,5 +15,5 @@ configMapGenerator:
 
 images:
   - name: data
-    newName: 461183108257.dkr.ecr.eu-west-2.amazonaws.com/uec/dos/test-database/data
+    newName: 461183108257.dkr.ecr.eu-west-2.amazonaws.com/uec/dos-api/test-database/data
     newTag: DOS_TEST_DATABASE_TAG_TO_REPLACE
