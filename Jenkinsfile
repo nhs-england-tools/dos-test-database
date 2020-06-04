@@ -98,9 +98,9 @@ pipeline {
       stage('Delete namespaces') {
         steps {
         sh 'echo Deleting namespaces'
-        //sh """
-        //kubectl delete namespace ${NAMESPACE}
-        //"""
+        sh """
+        kubectl delete namespace ${NAMESPACE}
+        """
         }
       }
 
