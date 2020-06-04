@@ -80,25 +80,29 @@ pipeline {
       }
 
       stage('Create RDS Instance'){  //choose name
+        steps{
         //sh """
         //make create-instance INSTANCE_NAME=${params.Namespace}
         //"""
+        }
       }
 
       stage('Populate Database'){
+        steps{
         //sh """
         //make populate-database
         //"""
+        }
       }
 
       stage('Delete namespaces') {
-      steps {
+        steps {
         sh 'echo Deleting namespaces'
         //sh """
         //kubectl delete namespace ${NAMESPACE}
         //"""
+        }
       }
-    }
 
     }
 }
