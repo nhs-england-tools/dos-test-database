@@ -41,7 +41,7 @@ pipeline {
     ALIAS_TARGET_HOSTED_ZONE_ID = 'Z32O12XQLNTSW2'
     HOSTED_ZONE_ID = 'Z2XTY6OZEUPIQ2'
 
-    NAMESPACE = 'Deploy-DoS-Test-DB'
+    NAMESPACE = sh(returnStdout: true, script: 'echo "${GIT_BRANCH##*/}" | tr "[A-Z]" "[a-z]"|tr -d "\n" ')
     DEPLOY_CONFIG = 'live-nonprod'
     JENKINS_USER = sh(returnStdout: true, script: 'echo `id -u jenkins` |tr -d "\n" ')
     JENKINS_GROUP = sh(returnStdout: true, script: 'echo `id -g jenkins` |tr -d "\n" ')
@@ -64,6 +64,7 @@ pipeline {
         steps {
           //A block of scripted pipeline within the declarative pipeline
           script {
+            echo 'Namespace : '${NAMESPACE}
             shared = load './resources/jenkins/shared_code.groovy'
             TAG = shared.getTag()
             //Note: the following uses the shared pipeline code to set vars.
