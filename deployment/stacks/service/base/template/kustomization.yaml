@@ -12,6 +12,7 @@ configMapGenerator:
       - DB_HOST=DB_HOST_TO_REPLACE
       - DB_USERNAME=DB_USERNAME_TO_REPLACE
       - DB_PASSWORD=DB_PASSWORD_TO_REPLACE
+      - ON_ERROR_STOP=ON_ERROR_STOP_TO_REPLACE
 
 images:
   - name: data
