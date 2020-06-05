@@ -81,14 +81,16 @@ pipeline {
 
       stage('Create RDS Instance'){  //choose name
         steps{
-        //sh """
-        //make create-instance INSTANCE_NAME=${params.Namespace}
-        //"""
+          sh 'echo Deleting namespaces'
+          //sh """
+          //make create-instance INSTANCE_NAME=${params.Namespace}
+          //"""
         }
       }
 
       stage('Populate Database'){
         steps{
+        sh 'echo Deleting namespaces'
         //sh """
         //make populate-database
         //"""
