@@ -23,7 +23,7 @@ pipeline {
       stage('Create RDS Instance'){
         steps{
           script{
-            sh'make create-instance INSTANCE_NAME=${params.name}'
+            sh'make create-instance INSTANCE_NAME=${params.Namespace}'
           }
         }
       }
