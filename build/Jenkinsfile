@@ -20,6 +20,7 @@ pipeline {
     }
       stage('Create RDS Instance'){
         steps{
+          sh 'make docker-config'
           sh 'make create-instance INSTANCE_NAME=${Namespace}'
         }
       }
