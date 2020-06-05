@@ -8,7 +8,7 @@ pipeline {
   }
   parameters {
     string(
-        Name: 'Namespace',
+        name: 'Namespace',
         description: 'Enter a name for the RDS Namespace',
     )
   }
