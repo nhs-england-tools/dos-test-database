@@ -6,6 +6,12 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr: '13'))
     disableConcurrentBuilds()
   }
+  parameters {
+    string(
+        Namespace: 'Namespace',
+        description: 'Enter a name for the RDS Namespace',
+    )
+  }
   stages {
     stage("Show Variables") {
       steps {
@@ -14,22 +20,27 @@ pipeline {
         }
       }
     }
-    stage("Run Test Suite") {
-      steps {
-        script {
-          sh '''
-            export AWS_ACCOUNT_ID_LIVE_PARENT=000000000000
-            export AWS_ACCOUNT_ID_MGMT=000000000000
-            export AWS_ACCOUNT_ID_NONPROD=000000000000
-            export AWS_ACCOUNT_ID_PROD=000000000000
-            make devops-test-suite || make devops-test-suite DEBUG=1
-          '''
+      stage('Create RDS Instance'){  //choose name
+        steps{
+          sh 'echo Create RDS Instance'
+          //sh """
+          //make create-instance INSTANCE_NAME=${params.Namespace}
+          //"""
         }
       }
-    }
+
+      stage('Populate Database'){
+        steps{
+        sh 'echo Deleting namespaces'
+        //sh """
+        //make populate-database
+        //"""
+        }
+      }
   }
   post {
     always {
+      sh 'echo Test'
       sh 'make devops-test-cleanup'
     }
   }
