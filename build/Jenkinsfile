@@ -20,13 +20,13 @@ pipeline {
     }
       stage('Create RDS Instance'){
         steps{
-          sh 'make create-instance INSTANCE_NAME=${params.Namespace}'
+          sh 'make create-instance INSTANCE_NAME=${Namespace}'
         }
       }
 
       stage('Populate Database'){
         steps{
-          sh 'make populate-database'
+          sh 'make populate-database INSTANCE_NAME=${Namespace}'
         }
       }
   }
