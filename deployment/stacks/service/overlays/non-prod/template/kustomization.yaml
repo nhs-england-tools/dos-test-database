@@ -1,0 +1,7 @@
+bases:
+  - ../../base
+
+namespace: K8S_JOB_NAMESPACE_TO_REPLACE
+
+commonLabels:
+  env: PROFILE_TO_REPLACE

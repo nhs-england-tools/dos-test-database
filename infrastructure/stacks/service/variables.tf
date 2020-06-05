@@ -66,4 +66,6 @@ variable "instance_db_name" {}
 
 variable "db_name" {}
 
+variable "db_port" {}
+
 variable "db_max_connections" {}

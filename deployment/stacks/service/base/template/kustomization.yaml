@@ -1,13 +1,20 @@
 resources:
   - namespace.yaml
-  - sample-deployment.yaml
-  - sample-service.yaml
+  - network-policies/allow-egress.yaml
+  - network-policies/allow-external-ingress.yaml
+  - populate-rds-job.yaml
 
 configMapGenerator:
-  - name: sample-configmap
+  - name: PROJECT_GROUP_SHORT_TO_REPLACE-PROJECT_NAME_SHORT_TO_REPLACE-K8S_JOB_NAME_TO_REPLACE-configmap
     literals:
       - PROFILE=PROFILE_TO_REPLACE
+      - DB_NAME=DB_NAME_TO_REPLACE
+      - DB_HOST=DB_HOST_TO_REPLACE
+      - DB_USERNAME=DB_USERNAME_TO_REPLACE
+      - DB_PASSWORD=DB_PASSWORD_TO_REPLACE
+      - ON_ERROR_STOP=ON_ERROR_STOP_TO_REPLACE
 
 images:
-  - name: DOCKER_REGISTRY_TO_REPLACE/sample
-    newTag: SAMPLE_IMAGE_TAG_TO_REPLACE
+  - name: data
+    newName: 461183108257.dkr.ecr.eu-west-2.amazonaws.com/uec/dos-api/test-database/data
+    newTag: DOS_TEST_DATABASE_TAG_TO_REPLACE

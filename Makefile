@@ -35,6 +35,16 @@ create-instance: # Creates RDS Instance - mandatory: INSTANCE_NAME=[name];
 	echo -e "\nPassword Secret Endpoint:"
 	echo $(INSTANCE_NAME)-nonprod-dos_db_password
 
+
+destroy-instance: # Destroys RDS Instance - mandatory: INSTANCE_NAME=[name];
+	make terraform-destroy \
+		STACKS=service \
+		OPTS=" \
+			-var-file=../tfvars/nonprod.tfvars \
+			-var instance_db_name=$(INSTANCE_NAME) \
+		"
+
+
 create-dos-database-image-repository: # Creates the ECR repository
 	make docker-login
 	make docker-create-repository NAME=data
@@ -43,9 +53,8 @@ push-dos-database-image: # Pushes the database image to the ECR repository
 	make docker-login
 	make docker-push NAME=data
 
-populate-database:
-	# TODO: Deploy k8s job to run the scripts agains the RDS instance
-	#		- instance name / location
+populate-database: # Deploys a kubernetes job to populate the RDS database
+	make k8s-deploy-job STACK=service PROFILE=non-prod
 
 # ==============================================================================
 

@@ -1,0 +1,17 @@
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: PROJECT_GROUP_SHORT_TO_REPLACE-PROJECT_NAME_SHORT_TO_REPLACE-K8S_JOB_NAME_TO_REPLACE-allow-external-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: PROJECT_GROUP_SHORT_TO_REPLACE-PROJECT_NAME_SHORT_TO_REPLACE-K8S_JOB_NAME_TO_REPLACE
+  policyTypes:
+    - Ingress
+  ingress:
+    - from: []
+      ports:
+        - protocol: TCP
+          port: 8443
+        - protocol: TCP
+          port: 443
