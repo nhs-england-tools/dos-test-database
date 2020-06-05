@@ -15,24 +15,18 @@ pipeline {
   stages {
     stage("Show Variables") {
       steps {
-        script {
-          sh 'make devops-print-variables'
-        }
+        sh 'make devops-print-variables'
       }
     }
       stage('Create RDS Instance'){
         steps{
-          script{
-            sh'make create-instance INSTANCE_NAME=${params.Namespace}'
-          }
+          sh 'make create-instance INSTANCE_NAME=${params.Namespace}'
         }
       }
 
       stage('Populate Database'){
         steps{
-          script{
-            sh 'make populate-database'
-          }
+          sh 'make populate-database'
         }
       }
   }
