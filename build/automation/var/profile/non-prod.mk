@@ -10,5 +10,4 @@ DB_USERNAME=postgres
 #DB_PASSWORD=password
 
 DOS_TEST_DATABASE_TAG=latest
-
 ON_ERROR_STOP=no
