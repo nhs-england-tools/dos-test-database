@@ -53,7 +53,7 @@ push-dos-database-image: # Pushes the database image to the ECR repository
 	make docker-login
 	make docker-push NAME=data
 
-populate-database:
+populate-database: # Deploys a kubernetes job to populate the RDS database
 	make k8s-deploy-job STACK=service PROFILE=non-prod
 
 # ==============================================================================
