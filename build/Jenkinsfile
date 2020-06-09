@@ -4,6 +4,7 @@ pipeline {
   }
   options {
     buildDiscarder(logRotator(daysToKeepStr: '6'))
+    disableConcurrentBuilds()
   }
   parameters {
     string(
