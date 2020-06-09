@@ -28,7 +28,7 @@ pipeline {
       stage('Populate Database'){
         steps{
           sh 'export DB_PASSWORD=$(make secret-fetch NAME=jenkins-test-4-dos-db-nonprod-dos_db_password) && make populate-database INSTANCE_NAME=${Namespace}'
-          sh 'make destroy-instance INSTANCE_NAME=${Namespace}'
+          sh 'make delete-populate-database-k8s-deployment INSTANCE_NAME=${Namespace}'
         }
       }
   }

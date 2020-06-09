@@ -44,7 +44,6 @@ destroy-instance: # Destroys RDS Instance - mandatory: INSTANCE_NAME=[name];
 			-var instance_db_name=$(INSTANCE_NAME) \
 		"
 
-
 create-dos-database-image-repository: # Creates the ECR repository
 	make docker-login
 	make docker-create-repository NAME=data
@@ -56,6 +55,10 @@ push-dos-database-image: # Pushes the database image to the ECR repository
 populate-database: # Deploys a kubernetes job to populate the RDS database - mandatory: INSTANCE_NAME=[name];
 	export INSTANCE_NAME=$(INSTANCE_NAME) && \
 	make k8s-deploy-job STACK=service PROFILE=non-prod
+
+delete-populate-database-k8s-deployment: # Delete kubernetes deployment for populate database job - mandatory: INSTANCE_NAME=[name];
+	export INSTANCE_NAME=$(INSTANCE_NAME) && \
+	make k8s-undeploy-job STACK=service PROFILE=non-prod
 
 # ==============================================================================
 
