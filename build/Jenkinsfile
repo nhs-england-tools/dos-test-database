@@ -27,8 +27,8 @@ pipeline {
 
       stage('Populate Database'){
         steps{
-          sh 'make aws-secret-get NAME=jenkins-test-4-dos-db-nonprod-dos_db_password' //pull from file
-          sh 'make populate-database INSTANCE_NAME=${Namespace}'
+          sh 'make secret-fetch NAME=jenkins-test-4-dos-db-nonprod-dos_db_password' //pull from file
+          // sh 'make populate-database INSTANCE_NAME=${Namespace}'
         }
       }
   }
