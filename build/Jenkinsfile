@@ -7,7 +7,7 @@ pipeline {
   }
   parameters {
     string(
-        name: 'RDS Instance Name',
+        name: 'rds_instance_name',
         description: 'Enter a name for the RDS instance',
     )
   }
@@ -15,14 +15,14 @@ pipeline {
     stage('Create RDS Instance'){
       steps{
         sh 'make docker-config'
-        sh 'make create-instance INSTANCE_NAME=${RDS Instance Name} > create-instance.output'
+        sh 'make create-instance INSTANCE_NAME=${rds_instance_name} > create-instance.output'
       }
     }
 
     stage('Populate Database'){
       steps{
-        sh 'export DB_PASSWORD=$(make secret-fetch NAME=jenkins-test-4-dos-db-nonprod-dos_db_password) && make populate-database INSTANCE_NAME=${RDS Instance Name}'
-        sh 'make delete-populate-database-k8s-deployment INSTANCE_NAME=${RDS Instance Name}'
+        sh 'export DB_PASSWORD=$(make secret-fetch NAME=jenkins-test-4-dos-db-nonprod-dos_db_password) && make populate-database INSTANCE_NAME=${rds_instance_name}'
+        sh 'make delete-populate-database-k8s-deployment INSTANCE_NAME=${rds_instance_name}'
       }
     }
   }
