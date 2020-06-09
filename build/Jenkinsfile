@@ -3,38 +3,27 @@ pipeline {
     label 'jenkins-slave'
   }
   options {
-    buildDiscarder(logRotator(numToKeepStr: '13'))
-    disableConcurrentBuilds()
+    buildDiscarder(logRotator(daysToKeepStr: '6'))
   }
   parameters {
     string(
-        name: 'Namespace',
-        description: 'Enter a name for the RDS Namespace',
+        name: 'RDS Instance Name',
+        description: 'Enter a name for the RDS instance',
     )
   }
   stages {
-    stage("Show Variables") {
-      steps {
-        sh 'make devops-print-variables'
+    stage('Create RDS Instance'){
+      steps{
+        sh 'make docker-config'
+        sh 'make create-instance INSTANCE_NAME=${RDS Instance Name} > create-instance.output'
       }
     }
-      stage('Create RDS Instance'){
-        steps{
-          sh 'make docker-config'
-          sh 'make create-instance INSTANCE_NAME=${Namespace} > create-instance.output'
-        }
-      }
 
-      stage('Populate Database'){
-        steps{
-          sh 'export DB_PASSWORD=$(make secret-fetch NAME=jenkins-test-4-dos-db-nonprod-dos_db_password) && make populate-database INSTANCE_NAME=${Namespace}'
-          sh 'make delete-populate-database-k8s-deployment INSTANCE_NAME=${Namespace}'
-        }
+    stage('Populate Database'){
+      steps{
+        sh 'export DB_PASSWORD=$(make secret-fetch NAME=jenkins-test-4-dos-db-nonprod-dos_db_password) && make populate-database INSTANCE_NAME=${RDS Instance Name}'
+        sh 'make delete-populate-database-k8s-deployment INSTANCE_NAME=${RDS Instance Name}'
       }
-  }
-  post {
-    always {
-      sh 'make devops-test-cleanup'
     }
   }
 }
