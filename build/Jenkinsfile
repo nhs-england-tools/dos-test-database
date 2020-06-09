@@ -12,16 +12,22 @@ pipeline {
     )
   }
   stages {
+    stage("Show Variables") {
+      steps {
+        sh 'make devops-print-variables'
+      }
+    }
+
     stage('Create RDS Instance'){
       steps{
         sh 'make docker-config'
-        sh 'make create-instance INSTANCE_NAME=${rds_instance_name} > create-instance.output'
+        sh 'make create-instance INSTANCE_NAME=${rds_instance_name}'
       }
     }
 
     stage('Populate Database'){
       steps{
-        sh 'export DB_PASSWORD=$(make secret-fetch NAME=jenkins-test-4-dos-db-nonprod-dos_db_password) && make populate-database INSTANCE_NAME=${rds_instance_name}'
+        sh 'export DB_PASSWORD=$(make secret-fetch NAME=${rds_instance_name}-db-nonprod-dos_db_password) && make populate-database INSTANCE_NAME=${rds_instance_name}'
         sh 'make delete-populate-database-k8s-deployment INSTANCE_NAME=${rds_instance_name}'
       }
     }
