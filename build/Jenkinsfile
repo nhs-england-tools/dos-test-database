@@ -27,7 +27,7 @@ pipeline {
 
     stage('Populate Database'){
       steps{
-        sh 'export DB_PASSWORD=$(make secret-fetch NAME=${rds_instance_name}-db-nonprod-dos_db_password) && make populate-database INSTANCE_NAME=${rds_instance_name}'
+        sh 'export DB_PASSWORD=$(make secret-fetch NAME=${rds_instance_name}-nonprod-dos_db_password) && make populate-database INSTANCE_NAME=${rds_instance_name}'
         sh 'make delete-populate-database-k8s-deployment INSTANCE_NAME=${rds_instance_name}'
       }
     }
