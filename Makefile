@@ -37,7 +37,7 @@ create-instance: # Creates RDS Instance - mandatory: INSTANCE_NAME=[name];
 
 
 destroy-instance: # Destroys RDS Instance - mandatory: INSTANCE_NAME=[name];
-	make terraform-destroy \
+	make terraform-destroy-auto-approve \
 		STACKS=service \
 		OPTS=" \
 			-var-file=../tfvars/nonprod.tfvars \
