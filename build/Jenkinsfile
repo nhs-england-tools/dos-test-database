@@ -48,6 +48,7 @@ pipeline {
         expression { params.build_action == 'destroy' }
       }
       steps {
+        sh 'make docker-config'
         sh 'make destroy-instance INSTANCE_NAME=${rds_instance_name}'
       }
     }
