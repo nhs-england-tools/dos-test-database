@@ -48,7 +48,7 @@ pipeline {
         expression { params.build_action == 'destroy' }
       }
       steps {
-        echo 'dummy delete'
+        sh 'make destroy-instance INSTANCE_NAME=${rds_instance_name}'
       }
     }
   }
