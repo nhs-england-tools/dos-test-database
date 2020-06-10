@@ -45,7 +45,7 @@ pipeline {
 
     stage('Destroy RDS Instance') {
       when {
-        expression { param.build_action == 'destroy' }
+        expression { params.build_action == 'destroy' }
       }
       steps {
         echo 'dummy delete'
