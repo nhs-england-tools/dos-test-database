@@ -48,7 +48,7 @@ pipeline {
         expression { param.build_action == 'destroy' }
       }
       steps {
-        sh 'echo dummy_delete'
+        echo 'dummy delete'
       }
     }
   }
