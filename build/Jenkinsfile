@@ -24,16 +24,31 @@ pipeline {
     }
 
     stage('Create RDS Instance'){
-      steps{
+      when {
+        expression { params.build_action == 'create' }
+      }
+      steps {
         sh 'make docker-config'
         sh 'make create-instance INSTANCE_NAME=${rds_instance_name}'
       }
     }
 
     stage('Populate Database'){
-      steps{
+      when {
+        expression { params.build_action == 'create' }
+      }
+      steps {
         sh 'export DB_PASSWORD=$(make secret-fetch NAME=${rds_instance_name}-nonprod-dos_db_password) && make populate-database INSTANCE_NAME=${rds_instance_name}'
         sh 'make delete-populate-database-k8s-deployment INSTANCE_NAME=${rds_instance_name}'
+      }
+    }
+
+    stage('Destroy RDS Instance') {
+      when {
+        expression { param.build_action == 'destroy' }
+      }
+      steps {
+        sh 'echo dummy_delete'
       }
     }
   }
