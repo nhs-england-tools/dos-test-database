@@ -12,7 +12,7 @@ pipeline {
     )
     choice(
         name: 'build_action',
-        choices: 'create\destroy',
+        choices: 'create\ndestroy',
         description: 'Enter whether your looking to create an DoS DB RDS instance or delete one'
     )
   }
