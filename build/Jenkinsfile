@@ -8,7 +8,12 @@ pipeline {
   parameters {
     string(
         name: 'rds_instance_name',
-        description: 'Enter a name for the RDS instance',
+        description: 'Enter a name for the DoS DB RDS instance',
+    )
+    choice(
+        name: 'build_action',
+        choices: 'create\destroy',
+        description: 'Enter whether your looking to create an DoS DB RDS instance or delete one'
     )
   }
   stages {
