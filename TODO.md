@@ -15,9 +15,12 @@ Pipeline Questions, tasks, and issues that need resolving
   files with the correct variable values.
 
 - In the infrastructure definition the RDS doesn't currently have a security group add/set that would provide
-  access for a developer us the database from there development environment. Would it be expected that you would
-  have dev environment access / should we add it ?
+  access for a developer us the database from there development environment. Would it be expected that you
+  would have dev environment access / should we add it ?
 
 - A review of the terraform code for the RDS DoS database model needs to be done to check to see if the current
-  parameters values are correct. Additional need to check that all expected configurable aspect of the module are
-  being parameterised.
+  parameters values are correct. Additional need to check that all expected configurable aspect of the module
+  are being parameterised.
+
+- Provide a solution or instructions on how to use the docker image with database sql as a local instance of
+  the Dos database.

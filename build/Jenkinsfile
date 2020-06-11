@@ -23,12 +23,17 @@ pipeline {
       }
     }
 
+    stage("Prepare") {
+      steps {
+        sh 'make docker-config'
+      }
+    }
+
     stage('Create RDS Instance'){
       when {
         expression { params.build_action == 'create' }
       }
       steps {
-        sh 'make docker-config'
         sh 'make create-instance INSTANCE_NAME=${rds_instance_name}'
       }
     }
@@ -48,7 +53,6 @@ pipeline {
         expression { params.build_action == 'destroy' }
       }
       steps {
-        sh 'make docker-config'
         sh 'make destroy-instance INSTANCE_NAME=${rds_instance_name}'
       }
     }
