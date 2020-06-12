@@ -3,6 +3,7 @@ TEST_DOCKER_IMAGE = postgres
 test-docker:
 	make test-docker-setup
 	tests=( \
+		test-docker-create-from-template \
 		test-docker-config \
 		test-docker-build \
 		test-docker-image-name-as \
@@ -26,6 +27,7 @@ test-docker:
 		test-docker-run-gradle \
 		test-docker-run-mvn \
 		test-docker-run-node \
+		test-docker-run-pulumi \
 		test-docker-run-python-single-cmd \
 		test-docker-run-python-multiple-cmd \
 		test-docker-run-python-multiple-cmd-pip-install \
@@ -35,8 +37,11 @@ test-docker:
 		test-docker-run-pass-variables \
 		test-docker-run-do-not-pass-empty-variables \
 		test-docker-run-specify-image \
+		test-docker-elasticsearch-image \
 		test-docker-nginx-image \
 		test-docker-postgres-image \
+		test-docker-python-image \
+		test-docker-python-app-image \
 		test-docker-tools-image \
 		test-docker-compose \
 		test-docker-compose-single-service \
@@ -58,6 +63,9 @@ test-docker-teardown:
 	make docker-prune
 
 # ==============================================================================
+
+test-docker-create-from-template:
+	mk_test_skip
 
 test-docker-config:
 	# act
@@ -101,7 +109,7 @@ test-docker-clean:
 	# act
 	make docker-clean
 	# assert
-	mk_test "0 -eq $$(find $(DOCKER_LIBRARY_DIR) -type f -name '.version' | wc -l)"
+	mk_test "0 -eq $$(find $(DOCKER_LIB_IMAGE_DIR) -type f -name '.version' | wc -l)"
 
 test-docker-prune:
 	# act
@@ -115,11 +123,11 @@ test-docker-create-dockerfile:
 	# act
 	make docker-create-dockerfile NAME=$(TEST_DOCKER_IMAGE)
 	# assert
-	mk_test "-n \"$$(cat $(DOCKER_LIBRARY_DIR)/$(TEST_DOCKER_IMAGE)/Dockerfile.effective | grep -Eo METADATA | wc -l)\""
+	mk_test "-n \"$$(cat $(DOCKER_LIB_IMAGE_DIR)/$(TEST_DOCKER_IMAGE)/Dockerfile.effective | grep -Eo METADATA | wc -l)\""
 
 test-docker-set-get-image-version:
 	# arrange
-	cp -rf $(DOCKER_LIBRARY_DIR)/$(TEST_DOCKER_IMAGE) $(TMP_DIR)
+	cp -rf $(DOCKER_LIB_IMAGE_DIR)/$(TEST_DOCKER_IMAGE) $(TMP_DIR)
 	echo "YYYYmmddHHMM-hash" > $(TMP_DIR)/$(TEST_DOCKER_IMAGE)/VERSION
 	# act
 	make docker-set-image-version NAME=$(TEST_DOCKER_IMAGE) DOCKER_CUSTOM_DIR=$(TMP_DIR)
@@ -173,7 +181,7 @@ test-docker-image-save:
 	# act
 	make docker-image-save NAME=postgres
 	# assert
-	mk_test "1 -eq $$(ls $(DOCKER_LIBRARY_DIR)/postgres/postgres-*-image.tar.gz | wc -l)"
+	mk_test "1 -eq $$(ls $(DOCKER_LIB_IMAGE_DIR)/postgres/postgres-*-image.tar.gz | wc -l)"
 
 test-docker-image-load:
 	# arrange
@@ -206,7 +214,7 @@ test-docker-run-dotnet:
 	make docker-config
 	# act
 	output=$$(
-		make docker-run-dotnet \
+		make -s docker-run-dotnet \
 			CMD="--info" \
 		| grep -Eo ".NET Core SDK" | wc -l)
 	# assert
@@ -217,7 +225,7 @@ test-docker-run-gradle:
 	make docker-config
 	# act
 	output=$$(
-		make docker-run-gradle \
+		make -s docker-run-gradle \
 			CMD="gradle --version" \
 		| grep -Eo "Gradle" | wc -l)
 	# assert
@@ -228,7 +236,7 @@ test-docker-run-mvn:
 	make docker-config
 	# act
 	output=$$(
-		make docker-run-mvn \
+		make -s docker-run-mvn \
 			CMD="--version" \
 		| grep -Eo "Apache Maven" | wc -l)
 	# assert
@@ -239,9 +247,20 @@ test-docker-run-node:
 	make docker-config
 	# act
 	output=$$(
-		make docker-run-node \
+		make -s docker-run-node \
 			CMD="npm --version" \
 		| grep -Eo "[(0-9)]*.[(0-9)]*" | wc -l)
+	# assert
+	mk_test "0 -lt $$output"
+
+test-docker-run-pulumi:
+	# arrange
+	make docker-config
+	# act
+	output=$$(
+		make -s docker-run-pulumi \
+			CMD="pulumi version" \
+		| grep -Eo "v[(0-9)]*.[(0-9)]*.[(0-9)]*" | wc -l)
 	# assert
 	mk_test "0 -lt $$output"
 
@@ -250,7 +269,7 @@ test-docker-run-python-single-cmd:
 	make docker-config
 	# act
 	output=$$(
-		make docker-run-python \
+		make -s docker-run-python \
 			CMD="python3 --version" \
 		| grep -Eo "Python" | wc -l)
 	# assert
@@ -261,7 +280,7 @@ test-docker-run-python-multiple-cmd:
 	make docker-config
 	# act
 	output=$$(
-		make docker-run-python SH=y \
+		make -s docker-run-python SH=y \
 			CMD="python3 --version && pip3 --version" \
 		| grep -Eo "Python" | wc -l)
 	# assert
@@ -272,7 +291,7 @@ test-docker-run-python-multiple-cmd-pip-install:
 	make docker-config
 	# act
 	output=$$(
-		make docker-run-python SH=y \
+		make -s docker-run-python SH=y \
 			CMD="pip3 install django > /dev/null 2>&1 && pip3 list" \
 		| grep -i "django" | wc -l)
 	# assert
@@ -283,7 +302,7 @@ test-docker-run-terraform:
 	make docker-config
 	# act
 	output=$$(
-		make docker-run-terraform \
+		make -s docker-run-terraform \
 			CMD="terraform --version" \
 		| grep -Eo "Terraform" | wc -l)
 	# assert
@@ -294,7 +313,7 @@ test-docker-run-tools-single-cmd:
 	make docker-config
 	# act
 	output=$$(
-		make docker-run-tools \
+		make -s docker-run-tools \
 			CMD="apt list --installed" \
 		| sed 's/\x1b\[[0-9;]*m//g' | grep -E -- '^curl/now' | wc -l)
 	# assert
@@ -305,7 +324,7 @@ test-docker-run-tools-multiple-cmd:
 	make docker-config
 	# act
 	output=$$(
-		make docker-run-tools SH=y \
+		make -s docker-run-tools SH=y \
 			CMD="cat /etc/issue && apt list --installed" \
 		| sed 's/\x1b\[[0-9;]*m//g' | grep -Ei -- '^(debian gnu/linux|curl/now)' | wc -l)
 	# assert
@@ -337,19 +356,31 @@ test-docker-run-specify-image:
 	# assert
 	mk_test "1 -eq $$output"
 
-test-docker-nginx-image:
+test-docker-elasticsearch-image:
 	# arrange
-	cd $(DOCKER_LIBRARY_DIR)/nginx
+	cd $(DOCKER_LIB_IMAGE_DIR)/elasticsearch
 	# act
 	make build test
 	# assert
 	mk_test true
+	# clean up
+	make clean
+
+test-docker-nginx-image:
+	# arrange
+	cd $(DOCKER_LIB_IMAGE_DIR)/nginx
+	# act & assert
+	make build test && \
+		mk_test "main" "true" || mk_test "main" "false"
+	make build-example test-example && \
+		mk_test "example" "true" || mk_test "example" "false"
+	mk_test_complete
 	# clean up
 	make clean
 
 test-docker-postgres-image:
 	# arrange
-	cd $(DOCKER_LIBRARY_DIR)/postgres
+	cd $(DOCKER_LIB_IMAGE_DIR)/postgres
 	# act
 	make build test
 	# assert
@@ -357,9 +388,31 @@ test-docker-postgres-image:
 	# clean up
 	make clean
 
+test-docker-python-image:
+	# arrange
+	cd $(DOCKER_LIB_IMAGE_DIR)/python
+	# act
+	make build test
+	# assert
+	mk_test true
+	# clean up
+	make clean
+
+test-docker-python-app-image:
+	# arrange
+	cd $(DOCKER_LIB_IMAGE_DIR)/python-app
+	# act & assert
+	make build test && \
+		mk_test "main" "true" || mk_test "main" "false"
+	make build-example test-example && \
+		mk_test "example" "true" || mk_test "example" "false"
+	mk_test_complete
+	# clean up
+	make clean
+
 test-docker-tools-image:
 	# arrange
-	cd $(DOCKER_LIBRARY_DIR)/tools
+	cd $(DOCKER_LIB_IMAGE_DIR)/tools
 	# act
 	make build test
 	# assert
@@ -415,7 +468,7 @@ test-docker-compose-parallel-execution:
 
 TEST_DOCKER_COMPOSE_YML = $(TMP_DIR)/docker-compose.yml
 TEST_DOCKER_COMPOSE_YML:
-	echo 'version: "3.8"' > $(TEST_DOCKER_COMPOSE_YML)
+	echo 'version: "3.7"' > $(TEST_DOCKER_COMPOSE_YML)
 	echo "services:" >> $(TEST_DOCKER_COMPOSE_YML)
 	echo "  alpine:" >> $(TEST_DOCKER_COMPOSE_YML)
 	echo "    image: alpine:latest" >> $(TEST_DOCKER_COMPOSE_YML)

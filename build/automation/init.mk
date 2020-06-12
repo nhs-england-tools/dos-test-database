@@ -64,6 +64,13 @@ devops-test-cleanup: ### Clean up adter the tests
 	docker network rm $(DOCKER_NETWORK) 2> /dev/null ||:
 	# TODO: Remove older networks that remained after unsuccessful builds
 
+devops-copy: ### Copy the DevOps automation toolchain scripts to given destination - optional: DIR
+	mkdir -p $(DIR)/build
+	rm -rf $(DIR)/build/automation
+	cp -rfv $(PROJECT_DIR)/build/automation $(DIR)/build
+	cp -fv $(PROJECT_DIR)/build/automation/lib/project/template/Makefile $(DIR)
+	cp -fv $(PROJECT_DIR)/LICENSE.md $(DIR)/build/automation/LICENSE.md
+
 devops-synchronise: ### Synchronise the DevOps automation toolchain scripts used by this project - optional: LATEST=true,ALL=true
 	function download() {
 		cd $(PROJECT_DIR)
@@ -91,13 +98,14 @@ devops-synchronise: ### Synchronise the DevOps automation toolchain scripts used
 			build/* \
 			$(PARENT_PROJECT_DIR)/build
 		[ -f $(PARENT_PROJECT_DIR)/build/automation/etc/certificate/*.pem ] && rm -fv $(PARENT_PROJECT_DIR)/build/automation/etc/certificate/.gitignore
-		[ ! -f $(PARENT_PROJECT_DIR)/build/docker/docker-compose.yml ] && cp -v build/docker/docker-compose.yml $(PARENT_PROJECT_DIR)/build/docker/docker-compose.yml ||:
-		[ ! -f $(PARENT_PROJECT_DIR)/build/Jenkinsfile ] && cp -v build/Jenkinsfile $(PARENT_PROJECT_DIR)/build/Jenkinsfile ||:
+		[ ! -f $(PARENT_PROJECT_DIR)/build/docker/docker-compose.yml ] && cp -v build/automation/lib/project/template/build/docker/docker-compose.yml $(PARENT_PROJECT_DIR)/build/docker/docker-compose.yml ||:
+		[ ! -f $(PARENT_PROJECT_DIR)/build/Jenkinsfile ] && cp -v build/automation/lib/project/template/build/Jenkinsfile $(PARENT_PROJECT_DIR)/build/Jenkinsfile ||:
 		cp -fv LICENSE.md $(PARENT_PROJECT_DIR)/build/automation/LICENSE.md
 		# Copy additionals
 		if [[ "$(ALL)" =~ ^(true|yes|y|on|1|TRUE|YES|Y|ON)$$ ]]; then
 			mkdir -p $(PARENT_PROJECT_DIR)/documentation/adr
 			cp -fv documentation/adr/README.md $(PARENT_PROJECT_DIR)/documentation/adr/README.md
+			cp -fv .editorconfig $(PARENT_PROJECT_DIR)/.editorconfig
 			cp -fv .gitignore $(PARENT_PROJECT_DIR)/.gitignore
 			cp -fv CONTRIBUTING.md $(PARENT_PROJECT_DIR)/CONTRIBUTING.md
 			cp -fv $(DEVOPS_PROJECT_NAME).code-workspace.template $(PARENT_PROJECT_DIR)/$(PARENT_PROJECT_NAME).code-workspace.template
@@ -113,12 +121,16 @@ devops-synchronise: ### Synchronise the DevOps automation toolchain scripts used
 		cd $(PARENT_PROJECT_DIR)
 		# Clean up old project files
 		rm -rf \
+			~/bin/docker-compose-processor \
+			~/bin/texas-mfa \
 			~/bin/texas-mfa-clear.sh \
-			~/bin/texas-mfa.py \
 			~/bin/toggle-natural-scrolling.sh \
 			$(PARENT_PROJECT_DIR)/build/automation/bin/markdown.pl \
 			$(PARENT_PROJECT_DIR)/build/automation/etc/platform-texas* \
 			$(PARENT_PROJECT_DIR)/build/automation/lib/dev.mk \
+			$(PARENT_PROJECT_DIR)/build/automation/lib/docker/nginx \
+			$(PARENT_PROJECT_DIR)/build/automation/lib/docker/postgres \
+			$(PARENT_PROJECT_DIR)/build/automation/lib/docker/tools \
 			$(PARENT_PROJECT_DIR)/build/automation/lib/fix \
 			$(PARENT_PROJECT_DIR)/build/automation/var/helpers.mk.default \
 			$(PARENT_PROJECT_DIR)/build/automation/var/override.mk.default \
@@ -269,10 +281,14 @@ SETUP_COMPLETE_FLAG_FILE := $(TMP_DIR)/.make-devops-setup-complete
 .NOTPARALLEL:
 .ONESHELL:
 .PHONY: *
-.SHELLFLAGS := -ce
 MAKEFLAGS := --no-print-director
 PATH := /usr/local/opt/coreutils/libexec/gnubin:/usr/local/opt/findutils/libexec/gnubin:/usr/local/opt/gnu-sed/libexec/gnubin:/usr/local/opt/gnu-tar/libexec/gnubin:/usr/local/opt/grep/libexec/gnubin:/usr/local/opt/make/libexec/gnubin:$(BIN_DIR):$(PATH)
 SHELL := /bin/bash
+ifeq (true, $(shell [[ "$(DEBUG)" =~ ^(true|yes|y|on|1|TRUE|YES|Y|ON)$$ ]] && echo true))
+	.SHELLFLAGS := -cex
+else
+	.SHELLFLAGS := -ce
+endif
 
 # ==============================================================================
 # Include additional libraries and customisations
@@ -406,6 +422,7 @@ endif
 .SILENT: \
 	_devops-synchronise-select-tag-to-install \
 	_devops-test \
+	devops-copy \
 	devops-print-variables \
 	devops-setup-aws-accounts \
 	devops-test-single \
