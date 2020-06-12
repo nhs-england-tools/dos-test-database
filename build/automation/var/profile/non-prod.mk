@@ -4,7 +4,8 @@
 # Service variables
 
 DB_NAME=postgres?sslmode=require
-DB_HOST=test-dos-db-4-rds-nonprod.cqger35bxcwy.eu-west-2.rds.amazonaws.com
+#INSTANCE_NAME=
+DB_HOST=$(INSTANCE_NAME)-nonprod.cqger35bxcwy.eu-west-2.rds.amazonaws.com
 DB_PORT=5432
 DB_USERNAME=postgres
 #DB_PASSWORD=password

@@ -249,7 +249,7 @@ k8s-job: ### Show status of jobs
 
 k8s-wait-for-job-to-complete: ### Wait for the job to complete
 	count=1
-	until [ $$count -gt 20 ]; do
+	until [ $$count -gt 120 ]; do
 		if [ "$$(make -s k8s-job-failed | tr -d '\n')" == "True" ]; then
 			echo "The job has failed"
 			exit 1

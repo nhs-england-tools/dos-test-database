@@ -3,28 +3,57 @@ pipeline {
     label 'jenkins-slave'
   }
   options {
-    buildDiscarder(logRotator(numToKeepStr: '13'))
-    disableConcurrentBuilds()
+    buildDiscarder(logRotator(daysToKeepStr: '6'))
+  }
+  parameters {
+    string(
+        name: 'rds_instance_name',
+        description: 'Enter a name for the DoS DB RDS instance',
+    )
+    choice(
+        name: 'build_action',
+        choices: 'create\ndestroy',
+        description: 'Enter whether your looking to create an DoS DB RDS instance or delete one'
+    )
   }
   stages {
     stage("Show Variables") {
       steps {
-        script {
-          sh 'make devops-print-variables'
-        }
+        sh 'make devops-print-variables'
       }
     }
-    stage("Run Test Suite") {
+
+    stage("Prepare") {
       steps {
-        script {
-          sh '''
-            export AWS_ACCOUNT_ID_LIVE_PARENT=000000000000
-            export AWS_ACCOUNT_ID_MGMT=000000000000
-            export AWS_ACCOUNT_ID_NONPROD=000000000000
-            export AWS_ACCOUNT_ID_PROD=000000000000
-            make devops-test-suite || make devops-test-suite DEBUG=1
-          '''
-        }
+        sh 'make docker-config'
+      }
+    }
+
+    stage('Create RDS Instance'){
+      when {
+        expression { params.build_action == 'create' }
+      }
+      steps {
+        sh 'make create-instance INSTANCE_NAME=${rds_instance_name}'
+      }
+    }
+
+    stage('Populate Database'){
+      when {
+        expression { params.build_action == 'create' }
+      }
+      steps {
+        sh 'export DB_PASSWORD=$(make secret-fetch NAME=${rds_instance_name}-nonprod-dos_db_password) && make populate-database INSTANCE_NAME=${rds_instance_name}'
+        sh 'make delete-populate-database-k8s-deployment INSTANCE_NAME=${rds_instance_name}'
+      }
+    }
+
+    stage('Destroy RDS Instance') {
+      when {
+        expression { params.build_action == 'destroy' }
+      }
+      steps {
+        sh 'make destroy-instance INSTANCE_NAME=${rds_instance_name}'
       }
     }
   }
