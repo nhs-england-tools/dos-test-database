@@ -23,7 +23,7 @@ log: project-log # Print service logs
 # ==============================================================================
 # Project targets: Ops workflow
 
-image: download # Create data and database images from the dump file and push them to the registry
+image: # Create data and database images from the dump file and push them to the registry
 	make \
 		image-create \
 		image-push
@@ -45,7 +45,7 @@ clean: # Remove all the resources - optional: NAME=[instance name, defaults to "
 
 PSQL := docker exec --interactive $(_TTY) database psql -d postgres -U postgres -t -c
 
-image-create: # Create data and database images
+image-create: download # Create data and database images
 	make \
 		build \
 		stop \
@@ -85,7 +85,7 @@ instance-plan: # Show the creation instance plan - optional: NAME=[instance name
 		PROFILE=dev \
 		NAME=$(or $(NAME), test)
 
-instance-create: # Create an instance - optional: NAME=[instance name, defaults to "test"]
+instance-create: project-config # Create an instance - optional: NAME=[instance name, defaults to "test"]
 	make terraform-apply-auto-approve \
 		PROFILE=dev \
 		NAME=$(or $(NAME), test)
