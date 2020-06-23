@@ -13,7 +13,7 @@ if [ "sql" == "$1" ]; then
   sql="$2"
   echo "Running SQL: $sql"
   run_psql -c "$sql"
-elif [ "scripts" == "$1" ]; then
+elif [ "script" == "$1" ] || [ "scripts" == "$1" ]; then
   dir=${2:-/data}
   i=0
   for file in $dir/*; do

@@ -15,6 +15,7 @@ RUN set -eux && \
     \
     # Get base packages
     apk add --no-cache \
+        ca-certificates \
         dpkg \
         gnupg \
     && \
@@ -38,6 +39,7 @@ RUN set -eux && \
     # Install base packages
     apk add --no-cache \
         bash \
+        curl \
     && \
     \
     # Configure system user

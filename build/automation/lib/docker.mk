@@ -11,10 +11,10 @@ DOCKER_COMPOSER_VERSION = 1.10.6
 DOCKER_DOTNET_VERSION = 3.1.201
 DOCKER_ELASTICSEARCH_VERSION = 7.7.0
 DOCKER_GRADLE_VERSION = 6.4.1-jdk14
-DOCKER_LOCALSTACK_VERSION = 0.11.1
+DOCKER_LOCALSTACK_VERSION = $(LOCALSTACK_VERSION)
 DOCKER_MAVEN_VERSION = 3.6.3-jdk-14
 DOCKER_NGINX_VERSION = 1.19.0-alpine
-DOCKER_NODE_VERSION = 14.3.0
+DOCKER_NODE_VERSION = 14.4.0-alpine
 DOCKER_OPENJDK_VERSION = 14.0.1-jdk
 DOCKER_POSTGRES_VERSION = 12.3
 DOCKER_PULUMI_VERSION = v2.3.0
@@ -23,6 +23,7 @@ DOCKER_TERRAFORM_VERSION = $(or $(TEXAS_TERRAFORM_VERSION), 0.12.25)
 
 DOCKER_LIBRARY_ELASTICSEARCH_VERSION = $(shell cat $(DOCKER_LIB_IMAGE_DIR)/elasticsearch/VERSION 2> /dev/null)
 DOCKER_LIBRARY_NGINX_VERSION = $(shell cat $(DOCKER_LIB_IMAGE_DIR)/nginx/VERSION 2> /dev/null)
+DOCKER_LIBRARY_NODE_VERSION = $(shell cat $(DOCKER_LIB_IMAGE_DIR)/node/VERSION 2> /dev/null)
 DOCKER_LIBRARY_POSTGRES_VERSION = $(shell cat $(DOCKER_LIB_IMAGE_DIR)/postgres/VERSION 2> /dev/null)
 DOCKER_LIBRARY_PYTHON_VERSION = $(shell cat $(DOCKER_LIB_IMAGE_DIR)/python/VERSION 2> /dev/null)
 DOCKER_LIBRARY_PYTHON_APP_VERSION = $(shell cat $(DOCKER_LIB_IMAGE_DIR)/python-app/VERSION 2> /dev/null)
@@ -42,9 +43,13 @@ docker-create-from-template: ### Create Docker image from template - mandatory: 
 	fi
 	rm -rf $(DOCKER_DIR)/$(NAME)
 	cp -rfv $(DOCKER_LIB_DIR)/template/$(TEMPLATE) $(DOCKER_DIR)/$(NAME)
+	find $(DOCKER_DIR)/$(NAME) -type f -name '.gitkeep' -print | xargs rm -fv
+	# Replace template values
+	export SUFFIX=_TEMPLATE_TO_REPLACE
 	export VERSION=$$(make docker-get-image-version NAME=$(TEMPLATE))
 	make -s file-replace-variables-in-dir DIR=$(DOCKER_DIR)/$(NAME)
-	find $(DOCKER_DIR)/$(NAME) -type f -name '.gitkeep' -print | xargs rm -fv
+	make -s file-replace-variables FILE=$(DOCKER_DIR)/docker-compose.yml
+	make -s file-replace-variables FILE=Makefile
 
 # ==============================================================================
 
@@ -128,7 +133,7 @@ docker-create-repository: ### Create Docker repository to store an image - manda
 	make -s docker-run-tools ARGS="$$(echo $(AWSCLI) | grep awslocal > /dev/null 2>&1 && echo '--env LOCALSTACK_HOST=$(LOCALSTACK_HOST)' ||:)" CMD=" \
 		$(AWSCLI) ecr create-repository \
 			--repository-name $(PROJECT_GROUP)/$(PROJECT_NAME)/$(NAME) \
-			--tags Key=Service,Value=$(TEXAS_SERVICE_TAG) \
+			--tags Key=Service,Value=$(SERVICE_TAG) \
 	"
 	make -s docker-run-tools ARGS="$$(echo $(AWSCLI) | grep awslocal > /dev/null 2>&1 && echo '--env LOCALSTACK_HOST=$(LOCALSTACK_HOST)' ||:)" CMD=" \
 		$(AWSCLI) ecr set-repository-policy \
@@ -184,6 +189,7 @@ docker-create-dockerfile: ### Create effective Dockerfile - mandatory: NAME
 	sed -i " \
 		s#FROM $(DOCKER_LIBRARY_REGISTRY)/elasticsearch:latest#FROM $(DOCKER_LIBRARY_REGISTRY)/elasticsearch:${DOCKER_LIBRARY_ELASTICSEARCH_VERSION}#g; \
 		s#FROM $(DOCKER_LIBRARY_REGISTRY)/nginx:latest#FROM $(DOCKER_LIBRARY_REGISTRY)/nginx:${DOCKER_LIBRARY_NGINX_VERSION}#g; \
+		s#FROM $(DOCKER_LIBRARY_REGISTRY)/node:latest#FROM $(DOCKER_LIBRARY_REGISTRY)/node:${DOCKER_LIBRARY_NODE_VERSION}#g; \
 		s#FROM $(DOCKER_LIBRARY_REGISTRY)/postgres:latest#FROM $(DOCKER_LIBRARY_REGISTRY)/postgres:${DOCKER_LIBRARY_POSTGRES_VERSION}#g; \
 		s#FROM $(DOCKER_LIBRARY_REGISTRY)/python:latest#FROM $(DOCKER_LIBRARY_REGISTRY)/python:${DOCKER_LIBRARY_PYTHON_VERSION}#g; \
 		s#FROM $(DOCKER_LIBRARY_REGISTRY)/python-app:latest#FROM $(DOCKER_LIBRARY_REGISTRY)/python-app:${DOCKER_LIBRARY_PYTHON_APP_VERSION}#g; \

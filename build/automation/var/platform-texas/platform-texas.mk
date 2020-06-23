@@ -5,7 +5,6 @@ AWS_SES_REGION = eu-west-1
 AWS_ROLE_JENKINS = jenkins_assume_role
 AWS_ROLE_SESSION = jenkins
 AWS_ROLE := $(if $(HUDSON_URL),$(AWS_ROLE_JENKINS),Developer)
-#AWS_PROFILE = nhsd-ddc-exeter-texas-live-lk8s-$(AWS_ACCOUNT_NAME)
 
 # ==============================================================================
 
