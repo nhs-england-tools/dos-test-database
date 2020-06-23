@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: data-deployment
+  namespace: K8S_JOB_NAMESPACE_TO_REPLACE
+spec:
+  template:
+    spec:
+      containers:
+        - name: data
+          image: DOCKER_REGISTRY_TO_REPLACE/data:VERSION_TO_REPLACE
+          envFrom:
+            - configMapRef:
+                name: data-configmap
+          command: ["/sbin/entrypoint.sh", "scripts"]
+          resources:
+            requests:
+              cpu: "0.5"
+              memory: "128M"
+            limits:
+              cpu: "1"
+              memory: "2048M"
+          imagePullPolicy: Always
+      restartPolicy: Never
+  backoffLimit: 0

@@ -1,10 +1,16 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: PROJECT_GROUP_SHORT_TO_REPLACE-PROJECT_NAME_SHORT_TO_REPLACE-K8S_JOB_NAME_TO_REPLACE-default-deny-ingress
+  name: allow-egress
+  namespace: K8S_JOB_NAMESPACE_TO_REPLACE
 spec:
   podSelector:
     matchLabels:
       app: PROJECT_GROUP_SHORT_TO_REPLACE-PROJECT_NAME_SHORT_TO_REPLACE-K8S_JOB_NAME_TO_REPLACE
   policyTypes:
-    - Ingress
+    - Egress
+  egress:
+    - to: []
+      ports:
+        - protocol: TCP
+          port: DB_PORT_TO_REPLACE

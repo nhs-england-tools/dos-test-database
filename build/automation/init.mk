@@ -342,11 +342,14 @@ ifndef PROGRAMME
 $(error PROGRAMME is not set in build/automation/var/project.mk)
 endif
 
-ifndef TEXAS_SERVICE_TAG
-$(error TEXAS_SERVICE_TAG is not set in build/automation/var/project.mk)
+ifndef SERVICE_TAG
+$(error SERVICE_TAG is not set in build/automation/var/project.mk)
 endif
-ifndef TEXAS_ROLE_PREFIX
-$(error TEXAS_ROLE_PREFIX is not set in build/automation/var/project.mk)
+ifndef PROJECT_TAG
+$(error PROJECT_TAG is not set in build/automation/var/project.mk)
+endif
+ifndef ROLE_PREFIX
+$(error ROLE_PREFIX is not set in build/automation/var/project.mk)
 endif
 
 ifndef AWS_ACCOUNT_ID_LIVE_PARENT
