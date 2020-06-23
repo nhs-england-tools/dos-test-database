@@ -113,7 +113,7 @@ devops-synchronise: ### Synchronise the DevOps automation toolchain scripts used
 	}
 	function version() {
 		cd $(PROJECT_DIR)
-		tag=$$([ -n "$$(git tag --points-at HEAD)" ] && echo $$(git tag --points-at HEAD) || echo vcommit)
+		tag=$$([ -n "$$(git tag --points-at HEAD)" ] && echo $$(git tag --points-at HEAD) || echo v$$(git show -s --format=%cd --date=format:%Y%m%d%H%M%S))
 		hash=$$(git rev-parse --short HEAD)
 		echo "$${tag:1}-$${hash}" > $(PARENT_PROJECT_DIR)/build/automation/VERSION
 	}
@@ -132,6 +132,7 @@ devops-synchronise: ### Synchronise the DevOps automation toolchain scripts used
 			$(PARENT_PROJECT_DIR)/build/automation/lib/docker/postgres \
 			$(PARENT_PROJECT_DIR)/build/automation/lib/docker/tools \
 			$(PARENT_PROJECT_DIR)/build/automation/lib/fix \
+			$(PARENT_PROJECT_DIR)/build/automation/lib/k8s/template/deployment/stacks/stack/base/template/network-policy \
 			$(PARENT_PROJECT_DIR)/build/automation/var/helpers.mk.default \
 			$(PARENT_PROJECT_DIR)/build/automation/var/override.mk.default \
 			$(PARENT_PROJECT_DIR)/build/docker/Dockerfile.metadata
@@ -150,7 +151,8 @@ devops-synchronise: ### Synchronise the DevOps automation toolchain scripts used
 		fi
 	}
 	if [ -z "$(__DEVOPS_SYNCHRONISE)" ]; then
-		git checkout -b task/Update_automation_scripts
+		branch=$$(git rev-parse --abbrev-ref HEAD)
+		[ $$branch != "task/Update_automation_scripts" ] && git checkout -b task/Update_automation_scripts
 		download
 		cd $(TMP_DIR)/$(DEVOPS_PROJECT_NAME)
 		make devops-synchronise \
