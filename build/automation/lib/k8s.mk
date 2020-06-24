@@ -4,6 +4,29 @@ K8S_DIR_REL = $(shell echo $(K8S_DIR) | sed "s;$(PROJECT_DIR);;g")
 K8S_JOB_NAMESPACE = $(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-$(PROFILE)-job
 K8S_KUBECONFIG_FILE = $(or $(TEXAS_K8S_KUBECONFIG_FILE), kubeconfig-lk8s-$(PROFILE)/cluster_kubeconfig)
 K8S_TTL_LENGTH = $(or $(TEXAS_K8S_TTL_LENGTH), 2 days)
+K8S_NAMESPACE = $(K8S_JOB_NAMESPACE)
+
+# ==============================================================================
+
+k8s-create-base-from-template: ### Create Kubernetes base deployment from template - optional: STACK=[name]
+	stack=$(or $(STACK), default)
+	mkdir -p $(DEPLOYMENT_DIR)/stacks/$$stack
+	cp -rfv $(LIB_DIR)/k8s/template/deployment/stacks/stack/base $(DEPLOYMENT_DIR)/stacks/$$stack
+	make -s file-replace-variables-in-dir \
+		DIR=$(DEPLOYMENT_DIR)/stacks/$$stack/base \
+		SUFFIX=_TEMPLATE_TO_REPLACE
+	find $(DEPLOYMENT_DIR)/stacks/$$stack/base -type d -name '*_TEMPLATE_TO_REPLACE' -print0 | xargs -0 rm -rf
+	cp -fv $(LIB_DIR)/k8s/template/deployment/stacks/.gitignore $(DEPLOYMENT_DIR)/stacks
+
+k8s-create-overlay-from-template: ### Create Kubernetes overlay deployment from template - mamdatory: PROFILE=[name]; optional: STACK=[name]
+	stack=$(or $(STACK), default)
+	mkdir -p $(DEPLOYMENT_DIR)/stacks/$$stack
+	cp -rfv $(LIB_DIR)/k8s/template/deployment/stacks/stack/overlays $(DEPLOYMENT_DIR)/stacks/$$stack
+	make -s file-replace-variables-in-dir \
+		DIR=$(DEPLOYMENT_DIR)/stacks/$$stack/overlays \
+		SUFFIX=_TEMPLATE_TO_REPLACE
+	find $(DEPLOYMENT_DIR)/stacks/$$stack/overlays -type d -name '*_TEMPLATE_TO_REPLACE' -print0 | xargs -0 rm -rf
+	cp -fv $(LIB_DIR)/k8s/template/deployment/stacks/.gitignore $(DEPLOYMENT_DIR)/stacks
 
 # ==============================================================================
 
@@ -39,7 +62,7 @@ k8s-deploy-job: ### Deploy job to the Kubernetes cluster - mandatory: STACK=[nam
 	kubectl apply -k $$(make -s _k8s-get-deployment-directory)
 	make k8s-clean # TODO: Create a flag to switch it off
 	make k8s-job
-	make k8s-wait-for-job-to-complete
+	make k8s-job-wait-to-complete
 
 k8s-undeploy-job: ### Remove Kubernetes resources from job namespace
 	# set up
@@ -47,7 +70,7 @@ k8s-undeploy-job: ### Remove Kubernetes resources from job namespace
 	make k8s-kubeconfig-get
 	eval "$$(make k8s-kubeconfig-export-variables)"
 	# undeploy
-	if kubectl get namespaces | grep -o "$(K8S_JOB_NAMESPACEss) "; then
+	if kubectl get namespaces | grep -o "$(K8S_JOB_NAMESPACE) "; then
 		kubectl delete namespace $(K8S_JOB_NAMESPACE)
 	fi
 
@@ -62,6 +85,66 @@ k8s-alb-get-ingress-endpoint: ### Get ALB ingress enpoint - mandatory: PROFILE=[
 		--selector="env=$(PROFILE)" \
 		--output=json \
 	| make -s docker-run-tools CMD="jq -rf $(JQ_DIR)/k8s-alb-get-ingress-endpoint.jq"
+
+k8s-pod-get-status-phase: ### Get the pod status phase - return: [phase name]
+	eval "$$(make k8s-kubeconfig-export-variables)"
+	kubectl get pod $$(make k8s-job-get-pod-name) \
+		--namespace=$(K8S_NAMESPACE) \
+		--output=json \
+	| make -s docker-run-tools CMD="jq -r '.status.phase'" | tr '[:upper:]' '[:lower:]' | tr -d '\n'
+
+k8s-job-wait-to-complete: ### Wait for the job to complete - optional SECONDS=[number of seconds, defaults to 60]
+	seconds=$(or $(SECONDS), 60)
+	echo "Waiting for the job to complete in $$seconds seconds"
+	sleep 10 && kubectl logs --follow --namespace=$(K8S_NAMESPACE) $$(make k8s-job-get-pod-name) &
+	count=0
+	while [ $$count -lt $$seconds ]; do
+		if [ true == "$$(make k8s-job-has-failed)" ]; then
+			echo "ERROR: The job has failed"
+			exit 1
+		fi
+		if [ true == "$$(make k8s-job-has-completed)" ]; then
+			echo "The job has completed"
+			exit 0
+		fi
+		sleep 1
+		((count++))
+	done
+	echo "ERROR: The job did not complete in the given time of $$seconds seconds"
+	exit 1
+
+k8s-job-log: ### Show the job pod logs
+	eval "$$(make k8s-kubeconfig-export-variables)"
+	kubectl logs $$(make k8s-job-get-pod-name) \
+		--namespace=$(K8S_NAMESPACE)
+
+k8s-job-get-name: ### Get the name of the job - return: [job name]
+	eval "$$(make k8s-kubeconfig-export-variables)"
+	kubectl get jobs \
+		--namespace=$(K8S_NAMESPACE) \
+		--selector "env=$(PROFILE)" \
+		--output jsonpath='{.items..metadata.name}'
+
+k8s-job-get-pod-name: ### Get the name of the job pod - return: [pod name]
+	eval "$$(make k8s-kubeconfig-export-variables)"
+	kubectl get pods \
+		--namespace=$(K8S_NAMESPACE) \
+		--selector "env=$(PROFILE)" \
+		--output jsonpath='{.items..metadata.name}'
+
+k8s-job-has-completed: ### Show whether the job completed - return: [true|""]
+	eval "$$(make k8s-kubeconfig-export-variables)"
+	kubectl get jobs $$(make k8s-job-get-name) \
+		--namespace=$(K8S_NAMESPACE) \
+		--output jsonpath='{.status.conditions[?(@.type=="Complete")].status}' \
+	| tr '[:upper:]' '[:lower:]' | tr -d '\n'
+
+k8s-job-has-failed: ### Show whether the job failed - return: [true|""]
+	eval "$$(make k8s-kubeconfig-export-variables)"
+	kubectl get jobs $$(make k8s-job-get-name) \
+		--namespace=$(K8S_NAMESPACE) \
+		--output jsonpath='{.status.conditions[?(@.type=="Failed")].status}' \
+	| tr '[:upper:]' '[:lower:]' | tr -d '\n'
 
 # ==============================================================================
 
@@ -184,42 +267,6 @@ k8s-sts: ### Show status of pods and services
 # ==============================================================================
 # TODO: This section needs a review
 
-k8s-job-log: ### Show the job pod logs
-	eval "$$(make k8s-kubeconfig-export-variables)"
-	echo
-	kubectl logs $$(make -s k8s-job-pod) \
-		--namespace=$(K8S_JOB_NAMESPACE)
-
-k8s-job-pod: ### Get the name of the pod created by the job
-	eval "$$(make k8s-kubeconfig-export-variables)"
-	echo
-	kubectl get pods \
-		--namespace=$(K8S_JOB_NAMESPACE) \
-		--selector "env=$(PROFILE)" \
-		--output jsonpath='{.items..metadata.name}'
-
-k8s-job-name: ### Get the name of the job
-	eval "$$(make k8s-kubeconfig-export-variables)"
-	echo
-	kubectl get jobs \
-		--namespace=$(K8S_JOB_NAMESPACE) \
-		--selector "env=$(PROFILE)" \
-		--output jsonpath='{.items..metadata.name}'
-
-k8s-job-failed: ### Show whether the job failed
-	eval "$$(make k8s-kubeconfig-export-variables)"
-	echo
-	kubectl get jobs $$(make -s k8s-job-name)\
-		--namespace=$(K8S_JOB_NAMESPACE) \
-		--output jsonpath='{.status.conditions[?(@.type=="Failed")].status}'
-
-k8s-job-complete: ### Show whether the job completed
-	eval "$$(make k8s-kubeconfig-export-variables)"
-	echo
-	kubectl get jobs $$(make -s k8s-job-name)\
-		--namespace=$(K8S_JOB_NAMESPACE) \
-		--output jsonpath='{.status.conditions[?(@.type=="Complete")].status}'
-
 k8s-job: ### Show status of jobs
 	eval "$$(make k8s-kubeconfig-export-variables)"
 	echo -e "\nDisplay namespaces"
@@ -247,36 +294,20 @@ k8s-job: ### Show status of jobs
 	kubectl get events \
 		--namespace=$(K8S_JOB_NAMESPACE)
 
-k8s-wait-for-job-to-complete: ### Wait for the job to complete
-	count=1
-	until [ $$count -gt 120 ]; do
-		if [ "$$(make -s k8s-job-failed | tr -d '\n')" == "True" ]; then
-			echo "The job has failed"
-			exit 1
-		fi
-		if [ "$$(make -s k8s-job-complete | tr -d '\n')" == "True" ]; then
-			echo "The job has completed"
-			exit 0
-		fi
-		echo "Still waiting for the job to complete"
-		sleep 5
-		((count++))
-	done
-	echo "The job has not completed, but have given up waiting."
-	exit 1
-
 # ==============================================================================
 
 .SILENT: \
 	_k8s-get-deployment-directory \
 	k8s-cnf \
 	k8s-get-namespace-ttl \
-	k8s-job-complete \
-	k8s-job-failed \
+	k8s-job-get-name \
+	k8s-job-get-pod-name \
+	k8s-job-has-completed \
+	k8s-job-has-failed \
 	k8s-job-log \
-	k8s-job-name \
+	k8s-job-wait-to-complete \
 	k8s-kubeconfig-export \
 	k8s-kubeconfig-export-variables \
 	k8s-log \
-	k8s-sts \
-	k8s-wait-for-job-to-complete
+	k8s-pod-get-status-phase \
+	k8s-sts

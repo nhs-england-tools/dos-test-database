@@ -103,7 +103,7 @@ aws-iam-policy-exists: ### Check if IAM policy exists - mandatory: NAME=[policy 
 aws-iam-role-create: ### Create IAM role - mandatory: NAME=[role name],DESCRIPTION=[role description],FILE=[path to json file]
 	cp $(FILE) $(TMP_DIR_REL)/$(@).json
 	make file-replace-variables FILE=$(TMP_DIR_REL)/$(@).json
-	tags='[{"Key":"Programme","Value":"$(PROGRAMME)"},{"Key":"Service","Value":"$(TEXAS_SERVICE_TAG)"},{"Key":"Environment","Value":"$(PROFILE)"}]'
+	tags='[{"Key":"Programme","Value":"$(PROGRAMME)"},{"Key":"Service","Value":"$(SERVICE_TAG)"},{"Key":"Environment","Value":"$(PROFILE)"}]'
 	make -s docker-run-tools ARGS="$$(echo $(AWSCLI) | grep awslocal > /dev/null 2>&1 && echo '--env LOCALSTACK_HOST=$(LOCALSTACK_HOST)' ||:)" CMD=" \
 		$(AWSCLI) iam create-role \
 			--role-name $(NAME) \
@@ -150,7 +150,7 @@ aws-s3-create: ### Create secure bucket - mandatory: NAME=[bucket name]
 			--bucket $(NAME) \
 			--versioning-configuration "Status=Enabled" \
 	"
-	tags='TagSet=[{Key=Programme,Value=$(PROGRAMME)},{Key=Service,Value=$(TEXAS_SERVICE_TAG)},{Key=Environment,Value=$(PROFILE)}]'
+	tags='TagSet=[{Key=Programme,Value=$(PROGRAMME)},{Key=Service,Value=$(SERVICE_TAG)},{Key=Environment,Value=$(PROFILE)}]'
 	make -s docker-run-tools ARGS="$$(echo $(AWSCLI) | grep awslocal > /dev/null 2>&1 && echo '--env LOCALSTACK_HOST=$(LOCALSTACK_HOST)' ||:)" CMD=" \
 		$(AWSCLI) s3api put-bucket-tagging \
 			--bucket $(NAME) \
@@ -179,6 +179,13 @@ aws-s3-exists: ### Check if bucket exists - mandatory: NAME=[bucket name]
 			s3://$(NAME) \
 		2>&1 | grep -q NoSuchBucket \
 	" > /dev/null 2>&1 && echo false || echo true
+
+aws-rds-describe-instance: ### Describe RDS instance - mandatory: DB_INSTANCE
+	make -s docker-run-tools ARGS="$$(echo $(AWSCLI) | grep awslocal > /dev/null 2>&1 && echo '--env LOCALSTACK_HOST=$(LOCALSTACK_HOST)' ||:)" CMD=" \
+		$(AWSCLI) rds describe-db-instances \
+			--region $(AWS_REGION) \
+			--db-instance-identifier=$(DB_INSTANCE) \
+	" | make -s docker-run-tools CMD="jq -r '.DBInstances[0]'"
 
 aws-rds-create-snapshot: ### Create RDS instance snapshot - mandatory: DB_INSTANCE,SNAPSHOT_NAME
 	make -s docker-run-tools ARGS="$$(echo $(AWSCLI) | grep awslocal > /dev/null 2>&1 && echo '--env LOCALSTACK_HOST=$(LOCALSTACK_HOST)' ||:)" CMD=" \
@@ -300,6 +307,7 @@ _aws-elasticsearch-register-snapshot-repository: ### Register Elasticsearch snap
 	aws-ecr-get-login-password \
 	aws-iam-policy-exists \
 	aws-iam-role-exists \
+	aws-rds-describe-instance \
 	aws-rds-get-snapshot-status \
 	aws-s3-exists \
 	aws-secret-create \

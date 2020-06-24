@@ -3,17 +3,18 @@ pipeline {
     label 'jenkins-slave'
   }
   options {
-    buildDiscarder(logRotator(daysToKeepStr: '6'))
+    buildDiscarder(logRotator(numToKeepStr: '13'))
+    disableConcurrentBuilds()
   }
   parameters {
     string(
-        name: 'rds_instance_name',
-        description: 'Enter a name for the DoS DB RDS instance',
+        name: 'instance_name',
+        description: 'Enter a name for the test DoS database instance',
     )
     choice(
-        name: 'build_action',
+        name: 'action',
         choices: 'create\ndestroy',
-        description: 'Enter whether your looking to create an DoS DB RDS instance or delete one'
+        description: 'Specify whether to create or destroy an instance'
     )
   }
   stages {
@@ -22,44 +23,21 @@ pipeline {
         sh 'make devops-print-variables'
       }
     }
-
-    stage("Prepare") {
-      steps {
-        sh 'make docker-config'
-      }
-    }
-
-    stage('Create RDS Instance'){
+    stage("Create Instance") {
       when {
-        expression { params.build_action == 'create' }
+        expression { params.action == 'create' }
       }
       steps {
-        sh 'make create-instance INSTANCE_NAME=${rds_instance_name}'
+        sh 'make instance VERSION=latest NAME=${instance_name}'
       }
     }
-
-    stage('Populate Database'){
+    stage("Destroy Instance") {
       when {
-        expression { params.build_action == 'create' }
+        expression { params.action == 'destroy' }
       }
       steps {
-        sh 'export DB_PASSWORD=$(make secret-fetch NAME=${rds_instance_name}-nonprod-dos_db_password) && make populate-database INSTANCE_NAME=${rds_instance_name}'
-        sh 'make delete-populate-database-k8s-deployment INSTANCE_NAME=${rds_instance_name}'
+        sh 'make clean NAME=${instance_name}'
       }
-    }
-
-    stage('Destroy RDS Instance') {
-      when {
-        expression { params.build_action == 'destroy' }
-      }
-      steps {
-        sh 'make destroy-instance INSTANCE_NAME=${rds_instance_name}'
-      }
-    }
-  }
-  post {
-    always {
-      sh 'make devops-test-cleanup'
     }
   }
 }

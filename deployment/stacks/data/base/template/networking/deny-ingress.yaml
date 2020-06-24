@@ -1,0 +1,10 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-ingress
+  namespace: K8S_JOB_NAMESPACE_TO_REPLACE
+spec:
+  podSelector:
+    matchLabels: {}
+  policyTypes:
+    - Ingress
