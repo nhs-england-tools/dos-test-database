@@ -7,8 +7,15 @@ services:
     hostname: data
     environment:
       DB_HOST: database.$PROJECT_NAME_SHORT.local
+      DB_NAME: $DB_NAME
+      DB_USERNAME: $DB_USERNAME
+      DB_PASSWORD: $DB_PASSWORD
       WAIT_FOR: database.$PROJECT_NAME_SHORT.local:5432
       ON_ERROR_STOP: "no"
+      DOS_DB_NAME: $DOS_DB_NAME
+      DOS_DB_PASSWORD: $DOS_DB_PASSWORD
+      DOS_DB_AUTH_PASSWORD: $DOS_DB_AUTH_PASSWORD
+      DOS_DB_RELEASE_MANAGER_PASSWORD: $DOS_DB_RELEASE_MANAGER_PASSWORD
     command: ["scripts"]
     networks:
       default:
@@ -18,9 +25,13 @@ services:
       - database
 
   database:
-    image: nhsd/postgres:latest
+    image: $DOCKER_REGISTRY/database:latest
     container_name: database
     hostname: database
+    environment:
+      DB_NAME: $DB_NAME
+      DB_USERNAME: $DB_USERNAME
+      DB_PASSWORD: $DB_PASSWORD
     command: ["postgres"]
     ports:
       - 5432:5432

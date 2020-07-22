@@ -40,14 +40,12 @@
     "telemetry.enableCrashReporter": false,
     "telemetry.enableTelemetry": false,
     "terminal.integrated.fontFamily": "Hack Nerd Font",
-    "terraform.indexing.enabled": false,
-    "terraform.languageServer.enabled": false,
     "window.title": "${activeEditorMedium}${separator}${rootName}${separator}${rootPath}",
     "window.zoomLevel": 0,
     /*"workbench.colorCustomizations": {
       "editorWhitespace.foreground": "#FF0000",
     },*/
-    "workbench.colorTheme": "Better Solarized Dark Italics",
+    "workbench.colorTheme": "Noctis Azureus",
     "workbench.editor.enablePreview": false,
     "workbench.tree.indent": 24,
     "[dockerfile]": {
@@ -79,7 +77,7 @@
       "editor.tabSize": 2
     },
     "[python]": {
-      "editor.tabSize": 2,
+      "editor.tabSize": 4,
       "editor.insertSpaces": true
     },
     "[terraform]": {
@@ -119,6 +117,25 @@
           "cmd": "/usr/local/bin/google-java-format --replace ${file}"
         }
       ]
-    }
+    },
+    "workbench.colorCustomizations": {
+      "activityBar.activeBackground": "#7f40bf",
+      "activityBar.activeBorder": "#c78f58",
+      "activityBar.background": "#7f40bf",
+      "activityBar.foreground": "#e7e7e7",
+      "activityBar.inactiveForeground": "#e7e7e799",
+      "activityBarBadge.background": "#c78f58",
+      "activityBarBadge.foreground": "#15202b",
+      "statusBar.background": "#663399",
+      "statusBar.border": "#663399",
+      "statusBar.foreground": "#e7e7e7",
+      "statusBarItem.hoverBackground": "#7f40bf",
+      "titleBar.activeBackground": "#663399",
+      "titleBar.activeForeground": "#e7e7e7",
+      "titleBar.border": "#663399",
+      "titleBar.inactiveBackground": "#66339999",
+      "titleBar.inactiveForeground": "#e7e7e799"
+    },
+    "peacock.color": "#639"
   }
 }

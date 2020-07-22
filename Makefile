@@ -5,14 +5,15 @@ include $(abspath $(PROJECT_DIR)/build/automation/init.mk)
 # Project targets: Dev workflow
 
 download: project-config # Download DoS database dump file
-	[ -f build/docker/data/assets/data/00-dos-database-dump.sql.gz ] && exit 0
+	[ -f build/docker/data/assets/data/50-dos-database-dump.sql.gz ] && exit 0
 	eval $$(make aws-assume-role-export-variables)
 	make aws-s3-download \
 		URI=nhsd-texasplatform-service-dos-lk8s-nonprod/dos-pg-dump-$(DOS_DATABASE_VERSION)-clean-PU.sql.gz \
-		FILE=build/docker/data/assets/data/00-dos-database-dump.sql.gz
+		FILE=build/docker/data/assets/data/50-dos-database-dump.sql.gz
 
 build: project-config # Build DoS database image
 	make docker-build NAME=data
+	make docker-build NAME=database
 
 start: project-start # Start service locally
 
@@ -68,8 +69,8 @@ _image-create-wait:
 
 _image-create-snapshot:
 	docker stop database
-	docker commit database $(DOCKER_REGISTRY)/database:$$(cat build/docker/data/.version)
-	docker tag $(DOCKER_REGISTRY)/database:$$(cat build/docker/data/.version) $(DOCKER_REGISTRY)/database:latest
+	docker commit database $(DOCKER_REGISTRY)/database:$$(cat build/docker/database/.version)
+	docker tag $(DOCKER_REGISTRY)/database:$$(cat build/docker/database/.version) $(DOCKER_REGISTRY)/database:latest
 	docker rm --force --volumes database
 
 image-create-repository: # Create registry for the data and database images
@@ -78,7 +79,7 @@ image-create-repository: # Create registry for the data and database images
 
 image-push: # Push the data and database images to the registry
 	make docker-push NAME=data VERSION=$$(cat build/docker/data/.version)
-	make docker-push NAME=database VERSION=$$(cat build/docker/data/.version)
+	make docker-push NAME=database VERSION=$$(cat build/docker/database/.version)
 
 instance-plan: # Show the creation instance plan - optional: NAME=[instance name, defaults to "test"]
 	make terraform-plan \
