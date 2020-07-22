@@ -15,7 +15,10 @@ help-project-supporting: ## Show development supporting targets
 devops-print-variables: ### Print all the variables
 	$(foreach v, $(sort $(.VARIABLES)),
 		$(if $(filter-out default automatic, $(origin $v)),
-			$(info $v=$($v) ($(value $v)))
+			$(if $(and $(patsubst %_PASSWORD,,$v), $(patsubst %_SECRET,,$v)),
+				$(info $v=$($v) ($(value $v)) [$(flavor $v),$(origin $v)]),
+				$(info $v=****** (******) [$(flavor $v),$(origin $v)])
+			)
 		)
 	)
 
@@ -32,6 +35,8 @@ devops-test-suite: ### Run the DevOps unit test suite - optional: DEBUG=true
 		test-k8s \
 		test-jenkins \
 		test-python \
+		test-java \
+		test-postgres \
 		test-techradar \
 		test-project \
 	"
@@ -98,8 +103,6 @@ devops-synchronise: ### Synchronise the DevOps automation toolchain scripts used
 			build/* \
 			$(PARENT_PROJECT_DIR)/build
 		[ -f $(PARENT_PROJECT_DIR)/build/automation/etc/certificate/*.pem ] && rm -fv $(PARENT_PROJECT_DIR)/build/automation/etc/certificate/.gitignore
-		[ ! -f $(PARENT_PROJECT_DIR)/build/docker/docker-compose.yml ] && cp -v build/automation/lib/project/template/build/docker/docker-compose.yml $(PARENT_PROJECT_DIR)/build/docker/docker-compose.yml ||:
-		[ ! -f $(PARENT_PROJECT_DIR)/build/Jenkinsfile ] && cp -v build/automation/lib/project/template/build/Jenkinsfile $(PARENT_PROJECT_DIR)/build/Jenkinsfile ||:
 		cp -fv LICENSE.md $(PARENT_PROJECT_DIR)/build/automation/LICENSE.md
 		# Copy additionals
 		if [[ "$(ALL)" =~ ^(true|yes|y|on|1|TRUE|YES|Y|ON)$$ ]]; then
@@ -126,6 +129,7 @@ devops-synchronise: ### Synchronise the DevOps automation toolchain scripts used
 			~/bin/texas-mfa-clear.sh \
 			~/bin/toggle-natural-scrolling.sh \
 			$(PARENT_PROJECT_DIR)/build/automation/bin/markdown.pl \
+			$(PARENT_PROJECT_DIR)/build/automation/etc/githooks/scripts/*.default \
 			$(PARENT_PROJECT_DIR)/build/automation/etc/platform-texas* \
 			$(PARENT_PROJECT_DIR)/build/automation/lib/dev.mk \
 			$(PARENT_PROJECT_DIR)/build/automation/lib/docker/nginx \
@@ -133,6 +137,7 @@ devops-synchronise: ### Synchronise the DevOps automation toolchain scripts used
 			$(PARENT_PROJECT_DIR)/build/automation/lib/docker/tools \
 			$(PARENT_PROJECT_DIR)/build/automation/lib/fix \
 			$(PARENT_PROJECT_DIR)/build/automation/lib/k8s/template/deployment/stacks/stack/base/template/network-policy \
+			$(PARENT_PROJECT_DIR)/build/automation/lib/k8s/template/deployment/stacks/stack/base/template/STACK_TEMPLATE_TO_REPLACE/network-policy.yaml \
 			$(PARENT_PROJECT_DIR)/build/automation/var/helpers.mk.default \
 			$(PARENT_PROJECT_DIR)/build/automation/var/override.mk.default \
 			$(PARENT_PROJECT_DIR)/build/docker/Dockerfile.metadata
@@ -253,12 +258,19 @@ VAR_DIR := $(abspath $(DEVOPS_PROJECT_DIR)/var)
 VAR_DIR_REL := $(shell echo $(VAR_DIR) | sed "s;$(PROJECT_DIR);;g")
 
 APPLICATION_DIR := $(abspath $(or $(APPLICATION_DIR), $(PROJECT_DIR)/application))
+APPLICATION_DIR_REL := $(shell echo $(APPLICATION_DIR) | sed "s;$(PROJECT_DIR);;g")
 APPLICATION_TEST_DIR := $(abspath $(or $(APPLICATION_TEST_DIR), $(PROJECT_DIR)/test))
+APPLICATION_TEST_DIR_REL := $(shell echo $(APPLICATION_TEST_DIR) | sed "s;$(PROJECT_DIR);;g")
 CONFIG_DIR := $(abspath $(or $(CONFIG_DIR), $(PROJECT_DIR)/config))
+CONFIG_DIR_REL := $(shell echo $(CONFIG_DIR) | sed "s;$(PROJECT_DIR);;g")
 DATA_DIR := $(abspath $(or $(DATA_DIR), $(PROJECT_DIR)/data))
+DATA_DIR_REL := $(shell echo $(DATA_DIR) | sed "s;$(PROJECT_DIR);;g")
 DEPLOYMENT_DIR := $(abspath $(or $(DEPLOYMENT_DIR), $(PROJECT_DIR)/deployment))
-GITHOOKS_DIR_REL := $(shell echo $(abspath $(ETC_DIR)/githooks) | sed "s;$(PROJECT_DIR);;g")
+DEPLOYMENT_DIR_REL := $(shell echo $(DEPLOYMENT_DIR) | sed "s;$(PROJECT_DIR);;g")
+GITHOOKS_DIR := $(abspath $(ETC_DIR)/githooks)
+GITHOOKS_DIR_REL := $(shell echo $(GITHOOKS_DIR) | sed "s;$(PROJECT_DIR);;g")
 INFRASTRUCTURE_DIR := $(abspath $(or $(INFRASTRUCTURE_DIR), $(PROJECT_DIR)/infrastructure))
+INFRASTRUCTURE_DIR_REL := $(shell echo $(INFRASTRUCTURE_DIR) | sed "s;$(PROJECT_DIR);;g")
 JQ_DIR_REL := $(shell echo $(abspath $(LIB_DIR)/jq) | sed "s;$(PROJECT_DIR);;g")
 
 PROFILE := $(or $(PROFILE), local)
