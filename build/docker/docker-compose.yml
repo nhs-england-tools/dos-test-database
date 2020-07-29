@@ -1,4 +1,4 @@
-version: "3.8"
+version: "3.7"
 
 services:
   data:
@@ -25,13 +25,15 @@ services:
       - database
 
   database:
-    image: $DOCKER_REGISTRY/database:latest
+    image: nhsd/postgres:latest
     container_name: database
     hostname: database
     environment:
       DB_NAME: $DB_NAME
       DB_USERNAME: $DB_USERNAME
       DB_PASSWORD: $DB_PASSWORD
+    volumes:
+      - default:/var/lib/postgresql/data
     command: ["postgres"]
     ports:
       - 5432:5432
@@ -39,6 +41,11 @@ services:
       default:
         aliases:
           - database.$PROJECT_NAME_SHORT.local
+
+volumes:
+  default:
+    external:
+      name: data
 
 networks:
   default:
