@@ -11,12 +11,17 @@ services:
       DB_USERNAME: $DB_USERNAME
       DB_PASSWORD: $DB_PASSWORD
       WAIT_FOR: database.$PROJECT_NAME_SHORT.local:5432
-      ON_ERROR_STOP: "no"
+      ON_ERROR_STOP: "yes"
       DOS_DB_NAME: $DOS_DB_NAME
       DOS_DB_PASSWORD: $DOS_DB_PASSWORD
       DOS_DB_AUTH_PASSWORD: $DOS_DB_AUTH_PASSWORD
       DOS_DB_RELEASE_MANAGER_PASSWORD: $DOS_DB_RELEASE_MANAGER_PASSWORD
-    command: ["scripts"]
+    command:
+      [
+        "scripts",
+        "--run-as-connection-details-prefix=DOS_",
+        "--run-as-script-name-pattern=50-dos-database-dump.sql.gz",
+      ]
     networks:
       default:
         aliases:
