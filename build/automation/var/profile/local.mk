@@ -7,6 +7,6 @@ DB_NAME = postgres
 DB_USERNAME = postgres
 DB_PASSWORD = postgres
 
-DOS_DB_NAME = pathwaysdos_dev
-DOS_DB_USERNAME = release_manager
-DOS_DB_PASSWORD = postgres
+DB_DOS_NAME = pathwaysdos_dev
+DB_DOS_USERNAME = release_manager
+DB_DOS_PASSWORD = postgres

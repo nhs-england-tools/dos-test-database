@@ -11,7 +11,7 @@ This assumes you've MFA-ed to get and set your AWS CLI credentials
 The directory where to run the terraform commands from
 
 #### Initialize Terraform State
-    
+
     terraform init \
                 -backend-config="bucket=nhsd-texasplatform-terraform-service-state-store-lk8s-nonprod" \
                 -backend-config="dynamodb_table=nhsd-texasplatform-terraform-service-state-lock-texas-lk8s-nonprod" \
@@ -37,7 +37,7 @@ Run this to see what effect this will have on the infrastructure and entering 'y
 
     terraform destroy --var-file=../tfvars/nonprod.tfvars
 
-Run this to see what would be deleted from the infrastructure and entering 'yes' at the end will DELETE the resources from  your AWS (TEXAS) infrastructure (use caution)
+Run this to see what would be deleted from the infrastructure and entering 'yes' at the end will DELETE the resources from your AWS (TEXAS) infrastructure (use caution)
 
 ### With Make DevOps Targets
 
@@ -59,4 +59,4 @@ Run this to see what effect this will have on the infrastructure and entering 'y
 
     make terraform-destroy STACKS=service OPTS="--var-file=infrastructure/stacks/tfvars/nonprod.tfvars"
 
-Run this to see what would be deleted from the infrastructure and entering 'yes' at the end will DELETE the resources from  your AWS (TEXAS) infrastructure (use caution)
+Run this to see what would be deleted from the infrastructure and entering 'yes' at the end will DELETE the resources from your AWS (TEXAS) infrastructure (use caution)

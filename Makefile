@@ -147,4 +147,6 @@ instance-populate: # Populate the instance with the data - optional: NAME=[insta
 
 # ==============================================================================
 
-.PHONY: image-create stop
+.PHONY: \
+	image-create \
+	stop

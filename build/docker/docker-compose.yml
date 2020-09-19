@@ -12,12 +12,13 @@ services:
       DB_PASSWORD: $DB_PASSWORD
       WAIT_FOR: database.$PROJECT_NAME_SHORT.local:5432
       ON_ERROR_STOP: "yes"
-      DOS_DB_NAME: $DOS_DB_NAME
-      DOS_DB_PASSWORD: $DOS_DB_PASSWORD
+      DB_DOS_NAME: $DB_DOS_NAME
+      DB_DOS_USERNAME: $DB_DOS_USERNAME
+      DB_DOS_PASSWORD: $DB_DOS_PASSWORD
     command:
       [
         "scripts",
-        "--run-as-connection-details-prefix=DOS_",
+        "--run-as-connection-details-prefix=DB_DOS",
         "--run-as-script-name-pattern=50-dos-database-dump.sql.gz",
       ]
     networks:
@@ -28,7 +29,7 @@ services:
       - database
 
   database:
-    image: nhsd/postgres:latest
+    image: nhsd/postgres:$DOCKER_LIBRARY_POSTGRES_VERSION
     container_name: database
     hostname: database
     environment:
