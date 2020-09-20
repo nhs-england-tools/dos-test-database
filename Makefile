@@ -111,8 +111,14 @@ image-test: # Test database image
 	docker rm --force database
 
 image-create-repository: # Create registry for the data and database images
-	make docker-create-repository NAME=data 2> /dev/null ||:
-	make docker-create-repository NAME=database 2> /dev/null ||:
+	make docker-create-repository \
+		NAME=data \
+		POLICY_FILE=build/automation/lib/aws/aws-ecr-create-repository-policy-custom.json \
+		2> /dev/null ||:
+	make docker-create-repository \
+		NAME=database \
+		POLICY_FILE=build/automation/lib/aws/aws-ecr-create-repository-policy-custom.json \
+		2> /dev/null ||:
 
 image-push: # Push the data and database images to the registry
 	make docker-push NAME=data VERSION=$$(cat build/docker/data/.version)
