@@ -14,6 +14,7 @@
   - [Merge request](#merge-request)
     - [GitLab web interface](#gitlab-web-interface)
   - [Code review](#code-review)
+  - [Unit tests](#unit-tests)
 
 ## Development Environment
 
@@ -47,7 +48,7 @@ Global Git configuration
 
     git config --global user.name "Your Name"
     git config --global user.email "your.name@nhs.net"
-    git config --global branch.autosetupmerge always
+    git config --global branch.autosetupmerge false
     git config --global branch.autosetuprebase always
     git config --global commit.gpgsign true
     git config --global core.autocrlf input
@@ -178,3 +179,22 @@ If JIRA is currently not in use to track project changes, please drop any refere
 ## Code review
 
 Please, refer to the [Clean Code](https://learning.oreilly.com/library/view/clean-code/9780136083238/), especially chapter 17 and [Clean Architecture](https://learning.oreilly.com/library/view/clean-architecture-a/9780134494272/) books by Robert C. Martin while performing peer code reviews.
+
+## Unit tests
+
+When writing or updating unit tests, please always structure them using the 3 A's approach of 'Arrange', 'Act', and 'Assert'. For example:
+
+    @Test
+    public void listServicesNullReturn() {
+
+      // Arrange
+      List<String> criteria = new ArrayList<>();
+      criteria.add("Null");
+      when(repository.findBy(criteria)).thenReturn(null);
+
+      // Act
+      List<Service> list = service.list(criteria);
+
+      // Assert
+      assertEquals(0, list.size());
+    }

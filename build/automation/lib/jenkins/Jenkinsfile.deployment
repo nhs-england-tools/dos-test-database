@@ -5,13 +5,9 @@ pipeline {
   options {
     buildDiscarder(logRotator(numToKeepStr: '13'))
     disableConcurrentBuilds()
-    parallelsAlwaysFailFast()
-  }
-  environment {
-    BUILD_DATE = sh(returnStdout: true, script: "date -u +'%Y-%m-%dT%H:%M:%S%z'").trim()
   }
   stages {
-    stage('Show Variables') {
+    stage("Show Variables") {
       steps {
         script {
           sh 'make devops-print-variables'
@@ -20,10 +16,5 @@ pipeline {
     }
   }
   post {
-    always {
-      sh '''
-        make clean
-      '''
-    }
   }
 }
