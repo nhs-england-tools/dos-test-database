@@ -1,8 +1,9 @@
-\set database_name `echo "$DOS_DB_NAME"`
-\set pathwaysdos_password `echo "$DOS_DB_PASSWORD"`
+\set database_name `echo "$DB_DOS_NAME"`
+\set pathwaysdos_username `echo "$DB_DOS_USERNAME"`
+\set pathwaysdos_password `echo "$DB_DOS_PASSWORD"`
 
-CREATE ROLE release_manager PASSWORD :'pathwaysdos_password' LOGIN NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION;
-ALTER ROLE release_manager SET search_path = pathwaysdos;
+CREATE ROLE :pathwaysdos_username PASSWORD :'pathwaysdos_password' LOGIN NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION;
+ALTER ROLE :pathwaysdos_username SET search_path = pathwaysdos;
 
 CREATE ROLE pathwaysdos_auth password :'pathwaysdos_password' LOGIN NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION;
 ALTER ROLE pathwaysdos_auth SET search_path = pathwaysdos, extn_pgcrypto;
@@ -18,4 +19,4 @@ GRANT pathwaysdos_auth_grp TO pathwaysdos_auth;
 GRANT pathwaysdos_read_grp TO pathwaysdos;
 GRANT pathwaysdos_write_grp TO pathwaysdos;
 
-CREATE DATABASE :database_name WITH OWNER release_manager;
+CREATE DATABASE :database_name WITH OWNER :pathwaysdos_username;

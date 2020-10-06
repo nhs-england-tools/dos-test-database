@@ -73,10 +73,11 @@ devops-copy: ### Copy the DevOps automation toolchain scripts to given destinati
 	mkdir -p $(DIR)/build
 	rm -rf $(DIR)/build/automation
 	cp -rfv $(PROJECT_DIR)/build/automation $(DIR)/build
-	cp -fv $(PROJECT_DIR)/build/automation/lib/project/template/Makefile $(DIR)
-	cp -fv $(PROJECT_DIR)/LICENSE.md $(DIR)/build/automation/LICENSE.md
+	cp -fv $(LIB_DIR)/project/template/Makefile $(DIR)
+	cp -fv $(LIB_DIR)/project/template/project.code-workspace $(DIR)
+	cp -fv $(PROJECT_DIR)/LICENSE.md $(DIR)/build/automation
 
-devops-synchronise: ### Synchronise the DevOps automation toolchain scripts used by this project - optional: LATEST=true,ALL=true
+devops-update devops-synchronise: ### Update/upgrade the DevOps automation toolchain scripts used by this project - optional: LATEST=true,ALL=true
 	function download() {
 		cd $(PROJECT_DIR)
 		rm -rf \
@@ -107,11 +108,11 @@ devops-synchronise: ### Synchronise the DevOps automation toolchain scripts used
 		# Copy additionals
 		if [[ "$(ALL)" =~ ^(true|yes|y|on|1|TRUE|YES|Y|ON)$$ ]]; then
 			mkdir -p $(PARENT_PROJECT_DIR)/documentation/adr
-			cp -fv documentation/adr/README.md $(PARENT_PROJECT_DIR)/documentation/adr/README.md
-			cp -fv .editorconfig $(PARENT_PROJECT_DIR)/.editorconfig
-			cp -fv .gitignore $(PARENT_PROJECT_DIR)/.gitignore
-			cp -fv CONTRIBUTING.md $(PARENT_PROJECT_DIR)/CONTRIBUTING.md
-			cp -fv $(DEVOPS_PROJECT_NAME).code-workspace.template $(PARENT_PROJECT_DIR)/$(PARENT_PROJECT_NAME).code-workspace.template
+			cp -fv documentation/adr/README.md $(PARENT_PROJECT_DIR)/documentation/adr
+			cp -fv .editorconfig $(PARENT_PROJECT_DIR)
+			cp -fv .gitignore $(PARENT_PROJECT_DIR)
+			cp -fv CONTRIBUTING.md $(PARENT_PROJECT_DIR)
+			cp -fv $(LIB_DIR)/project/template/project.code-workspace $(PARENT_PROJECT_DIR)
 		fi
 	}
 	function version() {
@@ -122,7 +123,14 @@ devops-synchronise: ### Synchronise the DevOps automation toolchain scripts used
 	}
 	function cleanup() {
 		cd $(PARENT_PROJECT_DIR)
-		# Clean up old project files
+		# Remove not needed project files
+		rm -f \
+			$(PARENT_PROJECT_DIR)/build/docker/.gitkeep
+		# Remove empty project directories
+		rmdir \
+			$(PARENT_PROJECT_DIR)/build/docker \
+			||:
+		# Remove old project files and directories
 		rm -rf \
 			~/bin/docker-compose-processor \
 			~/bin/texas-mfa \
@@ -269,6 +277,8 @@ DEPLOYMENT_DIR := $(abspath $(or $(DEPLOYMENT_DIR), $(PROJECT_DIR)/deployment))
 DEPLOYMENT_DIR_REL := $(shell echo $(DEPLOYMENT_DIR) | sed "s;$(PROJECT_DIR);;g")
 GITHOOKS_DIR := $(abspath $(ETC_DIR)/githooks)
 GITHOOKS_DIR_REL := $(shell echo $(GITHOOKS_DIR) | sed "s;$(PROJECT_DIR);;g")
+DOCUMENTATION_DIR := $(abspath $(or $(DOCUMENTATION_DIR), $(PROJECT_DIR)/documentation))
+DOCUMENTATION_DIR_REL := $(shell echo $(DOCUMENTATION_DIR) | sed "s;$(PROJECT_DIR);;g")
 INFRASTRUCTURE_DIR := $(abspath $(or $(INFRASTRUCTURE_DIR), $(PROJECT_DIR)/infrastructure))
 INFRASTRUCTURE_DIR_REL := $(shell echo $(INFRASTRUCTURE_DIR) | sed "s;$(PROJECT_DIR);;g")
 JQ_DIR_REL := $(shell echo $(abspath $(LIB_DIR)/jq) | sed "s;$(PROJECT_DIR);;g")
@@ -276,9 +286,11 @@ JQ_DIR_REL := $(shell echo $(abspath $(LIB_DIR)/jq) | sed "s;$(PROJECT_DIR);;g")
 PROFILE := $(or $(PROFILE), local)
 BUILD_ID := $(or $(or $(BUILD_ID), $(CIRCLE_BUILD_NUM)), 0)
 BUILD_DATE := $(or $(BUILD_DATE), $(shell date -u +"%Y-%m-%dT%H:%M:%S%z"))
-BUILD_HASH := $(or $(shell git rev-parse --short HEAD 2> /dev/null ||:), unknown)
+BUILD_TIMESTAMP := $(shell date --date=$(BUILD_DATE) -u +"%Y%m%d%H%M%S")
 BUILD_REPO := $(or $(shell git config --get remote.origin.url 2> /dev/null ||:), unknown)
-BUILD_BRANCH := $(or $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null ||:), unknown)
+BUILD_BRANCH := $(if $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null | grep -E ^HEAD$ ||:),$(or $(shell git name-rev --name-only HEAD 2> /dev/null ||:), unknown),$(or $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null ||:), unknown))
+BUILD_COMMIT_HASH := $(or $(shell git rev-parse --short HEAD 2> /dev/null ||:), unknown)
+BUILD_COMMIT_DATE := $(or $(shell TZ=UTC git show -s --format=%cd --date=format-local:%Y-%m-%dT%H:%M:%S%z HEAD 2> /dev/null ||:), unknown)
 USER_ID := $(shell id -u)
 GROUP_ID := $(shell id -g)
 TTY_ENABLE := false
