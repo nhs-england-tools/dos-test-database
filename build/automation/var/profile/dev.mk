@@ -3,8 +3,8 @@
 # ==============================================================================
 # Service variables
 
-DB_INSTANCE = $(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-$(NAME)-$(PROFILE)
-DB_HOST = $(DB_INSTANCE).cqger35bxcwy.eu-west-2.rds.amazonaws.com
+DB_INSTANCE = $(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-$(DB_INSTANCE_NAME)-$(ENVIRONMENT)
+#DB_HOST = [secret] $(DB_INSTANCE).aaaaaaaaaaaa.$(AWS_REGION).rds.amazonaws.com
 DB_PORT = 5432
 DB_NAME = postgres
 DB_USERNAME = postgres
