@@ -17,7 +17,7 @@ help-project-supporting: ### Show project specific supporting and deployment wor
 help-library: ### Show library targets
 	@awk 'BEGIN {FS = ":.*?### "} /^[ a-zA-Z0-9_-]+:.*? ### / {printf "\033[36m%-41s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
 
-devops-print-variables: ### Print all the variables
+devops-print-variables show-configuration: ### Print all the variables
 	$(foreach v, $(sort $(.VARIABLES)),
 		$(if $(filter-out default automatic, $(origin $v)),
 			$(if $(and $(patsubst %_PASSWORD,,$v), $(patsubst %_SECRET,,$v)),
@@ -184,6 +184,7 @@ devops-update devops-synchronise: ### Update/upgrade the DevOps automation toolc
 			$(PARENT_PROJECT_DIR)/build/automation/lib/fix \
 			$(PARENT_PROJECT_DIR)/build/automation/lib/k8s/template/deployment/stacks/stack/base/template/network-policy \
 			$(PARENT_PROJECT_DIR)/build/automation/lib/k8s/template/deployment/stacks/stack/base/template/STACK_TEMPLATE_TO_REPLACE/network-policy.yaml \
+			$(PARENT_PROJECT_DIR)/build/automation/lib/slack/jenkins-pipeline.json \
 			$(PARENT_PROJECT_DIR)/build/automation/var/helpers.mk.default \
 			$(PARENT_PROJECT_DIR)/build/automation/var/override.mk.default \
 			$(PARENT_PROJECT_DIR)/build/docker/Dockerfile.metadata
@@ -321,18 +322,22 @@ INFRASTRUCTURE_DIR := $(abspath $(or $(INFRASTRUCTURE_DIR), $(PROJECT_DIR)/infra
 INFRASTRUCTURE_DIR_REL := $(shell echo $(INFRASTRUCTURE_DIR) | sed "s;$(PROJECT_DIR);;g")
 JQ_DIR_REL := $(shell echo $(abspath $(LIB_DIR)/jq) | sed "s;$(PROJECT_DIR);;g")
 
-PROFILE := $(or $(PROFILE), local)
 BUILD_ID := $(or $(or $(BUILD_ID), $(CIRCLE_BUILD_NUM)), 0)
 BUILD_DATE := $(or $(BUILD_DATE), $(shell date -u +"%Y-%m-%dT%H:%M:%S%z"))
 BUILD_TIMESTAMP := $(shell date --date=$(BUILD_DATE) -u +"%Y%m%d%H%M%S")
 BUILD_REPO := $(or $(shell git config --get remote.origin.url 2> /dev/null ||:), unknown)
-BUILD_BRANCH := $(if $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null | grep -E ^HEAD$ ||:),$(or $(shell git name-rev --name-only HEAD 2> /dev/null ||:), unknown),$(or $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null ||:), unknown))
+BUILD_BRANCH := $(if $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null | grep -E ^HEAD$ ||:),$(or $(shell git name-rev --name-only HEAD 2> /dev/null | sed "s;remotes/origin/;;g" ||:), unknown),$(or $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null | sed "s;remotes/origin/;;g" ||:), unknown))
 BUILD_COMMIT_HASH := $(or $(shell git rev-parse --short HEAD 2> /dev/null ||:), unknown)
 BUILD_COMMIT_DATE := $(or $(shell TZ=UTC git show -s --format=%cd --date=format-local:%Y-%m-%dT%H:%M:%S%z HEAD 2> /dev/null ||:), unknown)
+BUILD_COMMIT_AUTHOR_NAME := $(shell git show -s --format='%an' HEAD)
+BUILD_COMMIT_AUTHOR_EMAIL := $(shell git show -s --format='%ae' HEAD)
+BUILD_COMMIT_MESSAGE := $(shell git log -1 --pretty=%B HEAD)
+PROFILE := $(or $(PROFILE), local)
+ENVIRONMENT := $(or $(ENVIRONMENT), $(shell ([ $(PROFILE) = local ] && echo local) || ( echo $(BUILD_BRANCH) | grep -Eoq '^task/[A-Z]{2,5}-[0-9]{1,5}_[A-Za-z0-9_]{4,32}' && (echo $(BUILD_BRANCH) | grep -Eo '^task/[A-Z]{2,5}-[0-9]{1,5}' | grep -Eo '[A-Z]{2,5}-[0-9]{1,5}' | tr '[:upper:]' '[:lower:]') || ([ $(BUILD_BRANCH) = master ] && echo $(PROFILE)))))
 USER_ID := $(shell id -u)
 GROUP_ID := $(shell id -g)
 TTY_ENABLE := $(or $(TTY_ENABLE), $(shell [ $(BUILD_ID) -eq 0 ] && echo true || echo false))
-_TTY := $$([ -t 0 ] && [ $(TTY_ENABLE) == true ] && echo "--tty")
+_TTY := $$([ -t 0 ] && [ $(TTY_ENABLE) = true ] && echo "--tty")
 
 GOSS_PATH := $(BIN_DIR)/goss-linux-amd64
 SETUP_COMPLETE_FLAG_FILE := $(TMP_DIR)/.make-devops-setup-complete
@@ -490,7 +495,7 @@ endif
 	_devops-synchronise-select-tag-to-install \
 	_devops-test \
 	devops-copy \
-	devops-print-variables \
+	devops-print-variables show-configuration \
 	devops-setup-aws-accounts \
 	devops-test-single \
 	devops-test-suite \

@@ -1,12 +1,12 @@
 PYTHON_VERSION_MAJOR = 3
-PYTHON_VERSION_MINOR = 8
-PYTHON_VERSION_PATCH = 5
+PYTHON_VERSION_MINOR = 9
+PYTHON_VERSION_PATCH = 0
 PYTHON_VERSION = $(PYTHON_VERSION_MAJOR).$(PYTHON_VERSION_MINOR).$(PYTHON_VERSION_PATCH)
 PYTHON_BASE_PACKAGES = \
-	awscli-local==0.8 \
-	awscli==1.18.131 \
+	awscli-local==0.9 \
+	awscli==1.18.159 \
 	black==20.8b1 \
-	boto3==1.14.54 \
+	boto3==1.15.18 \
 	bpython \
 	configparser \
 	coverage \
@@ -23,7 +23,7 @@ python-virtualenv: ### Setup Python virtual environment - optional: PYTHON_VERSI
 	brew upgrade pyenv
 	pyenv install --skip-existing $(PYTHON_VERSION)
 	pyenv local $(PYTHON_VERSION)
-	pip install --upgrade pip
+	pip install --upgrade pip || pyenv install $(PYTHON_VERSION) && pip install --upgrade pip
 	pip install $(PYTHON_BASE_PACKAGES)
 	sed -i 's;    "python.linting.flake8Path":.*;    "python.linting.flake8Path": "~/.pyenv/versions/$(PYTHON_VERSION)/bin/flake8",;g' project.code-workspace
 	sed -i 's;    "python.linting.mypyPath":.*;    "python.linting.mypyPath": "~/.pyenv/versions/$(PYTHON_VERSION)/bin/mypy",;g' project.code-workspace

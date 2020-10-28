@@ -3,6 +3,8 @@ PROJECT_CONFIG_TIMESTAMP_FILE = $(TMP_DIR)/project-config-timestamp
 #PROJECT_CONFIG_TIMESTAMP
 #PROJECT_CONFIG_FORCE
 
+# ==============================================================================
+
 project-config: ### Configure project environment
 	make \
 		git-config \
@@ -36,39 +38,23 @@ project-stop: ### Stop Docker Compose
 project-log: ### Print log from Docker Compose
 	make docker-compose-log
 
-project-deploy: ### Deploy application service stack to the Kubernetes cluster - mandatory: PROFILE=[profile name]
-	make k8s-deploy STACK=$(or $(NAME), service)
+project-deploy: ### Deploy application stack to the Kubernetes cluster - mandatory: STACK|STACKS|DEPLOYMENT_STACKS=[comma-separated names],PROFILE=[profile name]
+	make k8s-deploy STACK=$(or $(STACK), $(or $(STACKS), $(DEPLOYMENT_STACKS)))
+
+project-undeploy: ### Undeploy application stack from the Kubernetes cluster - mandatory: PROFILE=[profile name]
+	make k8s-undeploy
+
+project-deploy-job: ### Deploy job stack to the Kubernetes cluster - mandatory: STACK|STACKS|DEPLOYMENT_STACKS=[comma-separated names],PROFILE=[profile name]
+	make k8s-deploy-job STACK=$(or $(STACK), $(or $(STACKS), $(DEPLOYMENT_STACKS)))
+
+project-undeploy-job: ### Undeploy job stack from the Kubernetes cluster - mandatory: PROFILE=[profile name]
+	make k8s-undeploy-job
 
 project-document-infrastructure: ### Generate infrastructure diagram - optional: FIN=[Python file path, defaults to infrastructure/diagram.py],FOUT=[PNG file path, defaults to documentation/Infrastructure_Diagram]
 	make docker-run-tools CMD="python \
 		$(or $(FIN), $(INFRASTRUCTURE_DIR_REL)/diagram.py) \
 		$(or $(FOUT), $(DOCUMENTATION_DIR_REL)/Infrastructure_Diagram) \
 	"
-
-# ==============================================================================
-
-project-tag-as-release-candidate: ### Tag release candidate - mandatory: ARTEFACT|ARTEFACTS=[comma-separated image names]; optional: COMMIT=[git commit hash, defaults to master]
-	commit=$(or $(COMMIT), master)
-	make git-tag-create-release-candidate COMMIT=$$commit
-	tag=$$(make git-tag-get-release-candidate COMMIT=$$commit)
-	for image in $$(echo $(or $(ARTEFACTS), $(ARTEFACT)) | tr "," "\n"); do
-		make docker-image-find-and-tag-as \
-			TAG=$$tag \
-			IMAGE=$$image \
-			COMMIT=$$commit
-	done
-
-project-tag-as-environment-deployment: ### Tag environment deployment - mandatory: ARTEFACT|ARTEFACTS=[comma-separated image names],PROFILE=[profile name]; optional: COMMIT=[git release candidate tag name, defaults to master]
-	[ $(PROFILE) = local ] && (echo "ERROR: Please, specify the PROFILE"; exit 1)
-	commit=$(or $(COMMIT), master)
-	make git-tag-create-environment-deployment COMMIT=$$commit PROFILE=$(PROFILE)
-	tag=$$(make git-tag-get-environment-deployment COMMIT=$$commit PROFILE=$(PROFILE) )
-	for image in $$(echo $(or $(ARTEFACTS), $(ARTEFACT)) | tr "," "\n"); do
-		make docker-image-find-and-tag-as \
-			TAG=$$tag \
-			IMAGE=$$image \
-			COMMIT=$$commit
-	done
 
 # ==============================================================================
 
@@ -98,10 +84,86 @@ project-create-pipeline: ### Create pipeline
 
 # ==============================================================================
 
+project-branch-deploy: ### Check if development branch can be deployed automatically - return: true|false
+	[ $(BUILD_BRANCH) == master ] && echo true && exit 0
+	[[ $(BUILD_BRANCH) =~ ^$(GIT_TASK_BRANCH_PATTERN) ]] && [ $$(make project-message-contains KEYWORD=deploy) == true ] && echo true && exit 0
+	[ $$(make project-branch-test) == true ] && echo true && exit 0
+	echo false
+
+project-branch-test: ### Check if development branch can be tested automatically - return: true|false
+	[ $(BUILD_BRANCH) == master ] && echo true && exit 0
+	[[ $(BUILD_BRANCH) =~ ^$(GIT_TASK_BRANCH_PATTERN) ]] && [ $$(make project-message-contains KEYWORD=test,func-test,perf-test,sec-test) == true ] && echo true && exit 0
+	echo false
+
+project-branch-func-test: ### Check if development branch can be tested (functional) automatically - return: true|false
+	[ $(BUILD_BRANCH) == master ] && echo true && exit 0
+	[[ $(BUILD_BRANCH) =~ ^$(GIT_TASK_BRANCH_PATTERN) ]] && [ $$(make project-message-contains KEYWORD=test,func-test) == true ] && echo true && exit 0
+	echo false
+
+project-branch-perf-test: ### Check if development branch can be tested (performance) automatically - return: true|false
+	[ $(BUILD_BRANCH) == master ] && echo true && exit 0
+	[[ $(BUILD_BRANCH) =~ ^$(GIT_TASK_BRANCH_PATTERN) ]] && [ $$(make project-message-contains KEYWORD=test,perf-test) == true ] && echo true && exit 0
+	echo false
+
+project-branch-sec-test: ### Check if development branch can be tested (security) automatically - return: true|false
+	[ $(BUILD_BRANCH) == master ] && echo true && exit 0
+	[[ $(BUILD_BRANCH) =~ ^$(GIT_TASK_BRANCH_PATTERN) ]] && [ $$(make project-message-contains KEYWORD=test,sec-test) == true ] && echo true && exit 0
+	echo false
+
+project-message-contains: ### Check if git commit message contains any give keyword - mandatory KEYWORD=[comma-separated keywords]
+	msg=$$(make git-msg)
+	for str in $$(echo $(KEYWORD) | sed "s/,/ /g"); do
+		echo "$$msg" | grep -E '[ci .*]' | grep -Eoq "\[ci .*$${str}[^-].*" && echo true && exit 0
+	done
+	echo false
+
+project-get-tag: ### Return the default tag
+	echo $(BUILD_TIMESTAMP)-$(BUILD_COMMIT_HASH)
+
+project-list-profiles: ### List all the profiles
+	for profile in $$(cd $(VAR_DIR)/profile; ls *.mk 2> /dev/null | sed 's/.mk//'); do
+		[ $$profile != local ] && echo $$profile ||:
+	done
+
+# --------------------------------------
+
+project-tag-as-release-candidate: ### Tag release candidate - mandatory: ARTEFACT|ARTEFACTS=[comma-separated image names]; optional: COMMIT=[git commit hash, defaults to master]
+	commit=$(or $(COMMIT), master)
+	make git-tag-create-release-candidate COMMIT=$$commit
+	tag=$$(make git-tag-get-release-candidate COMMIT=$$commit)
+	for image in $$(echo $(or $(ARTEFACTS), $(ARTEFACT)) | tr "," "\n"); do
+		make docker-image-find-and-tag-as \
+			TAG=$$tag \
+			IMAGE=$$image \
+			COMMIT=$$commit
+	done
+
+project-tag-as-environment-deployment: ### Tag environment deployment - mandatory: ARTEFACT|ARTEFACTS=[comma-separated image names],ENVIRONMENT=[environment name]; optional: COMMIT=[git release candidate tag name, defaults to master]
+	[ $(ENVIRONMENT) = local ] && (echo "ERROR: Please, specify the ENVIRONMENT"; exit 1)
+	commit=$(or $(COMMIT), master)
+	make git-tag-create-environment-deployment COMMIT=$$commit ENVIRONMENT=$(ENVIRONMENT)
+	tag=$$(make git-tag-get-environment-deployment COMMIT=$$commit ENVIRONMENT=$(ENVIRONMENT))
+	for image in $$(echo $(or $(ARTEFACTS), $(ARTEFACT)) | tr "," "\n"); do
+		make docker-image-find-and-tag-as \
+			TAG=$$tag \
+			IMAGE=$$image \
+			COMMIT=$$commit
+	done
+
+# ==============================================================================
+
 .SILENT: \
+	project-branch-deploy \
+	project-branch-func-test \
+	project-branch-perf-test \
+	project-branch-sec-test \
+	project-branch-test \
 	project-create-contract-test \
 	project-create-deployment \
 	project-create-image \
 	project-create-infrastructure \
 	project-create-pipeline \
-	project-create-profile
+	project-create-profile \
+	project-get-tag \
+	project-list-profiles \
+	project-message-contains

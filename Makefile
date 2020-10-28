@@ -2,7 +2,7 @@ PROJECT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 include $(abspath $(PROJECT_DIR)/build/automation/init.mk)
 
 # ==============================================================================
-# Project targets: Dev workflow
+# Development workflow targets
 
 download: project-config # Download DoS database dump file
 	[ -f build/docker/data/assets/data/50-dos-database-dump.sql.gz ] && exit 0
@@ -32,8 +32,7 @@ stop: # Stop service locally
 
 log: project-log # Print service logs
 
-# ==============================================================================
-# Project targets: Ops workflow
+# --------------------------------------
 
 image: # Create data and database images from the dump file and push them to the registry
 	make \
@@ -54,8 +53,7 @@ clean: # Remove all the resources - optional: NAME=[instance name, defaults to "
 		PROFILE=dev
 	make instance-destroy
 
-# ==============================================================================
-# Supporting targets and variables
+# --------------------------------------
 
 PSQL := docker exec --interactive $(_TTY) database psql -d postgres -U postgres -t -c
 
@@ -150,6 +148,99 @@ instance-populate: # Populate the instance with the data - optional: NAME=[insta
 		PROFILE=dev \
 		NAME=$(or $(NAME), test) \
 		VERSION=$(or $(VERSION), $$(cat build/docker/data/.version))
+
+# ==============================================================================
+# Pipeline targets
+
+build-artefact:
+	echo TODO: $(@)
+
+publish-artefact:
+	echo TODO: $(@)
+
+backup-data:
+	echo TODO: $(@)
+
+provision-infractructure:
+	echo TODO: $(@)
+
+deploy-artefact:
+	echo TODO: $(@)
+
+apply-data-changes:
+	echo TODO: $(@)
+
+# --------------------------------------
+
+run-static-analisys:
+	echo TODO: $(@)
+
+run-unit-test:
+	echo TODO: $(@)
+
+run-smoke-test:
+	echo TODO: $(@)
+
+run-integration-test:
+	echo TODO: $(@)
+
+run-contract-test:
+	echo TODO: $(@)
+
+run-functional-test:
+	[ $$(make project-branch-func-test) != true ] && exit 0
+	echo TODO: $(@)
+
+run-performance-test:
+	[ $$(make project-branch-perf-test) != true ] && exit 0
+	echo TODO: $(@)
+
+run-security-test:
+	[ $$(make project-branch-sec-test) != true ] && exit 0
+	echo TODO: $(@)
+
+# --------------------------------------
+
+remove-unused-environments:
+	echo TODO: $(@)
+
+remove-old-artefacts:
+	echo TODO: $(@)
+
+remove-old-backups:
+	echo TODO: $(@)
+
+# --------------------------------------
+
+pipeline-finalise: ## Finalise pipeline execution - mandatory: PIPELINE_NAME,BUILD_STATUS
+	# Check if BUILD_STATUS is SUCCESS or FAILURE
+	make pipeline-send-notification
+
+pipeline-send-notification: ## Send Slack notification with the pipeline status - mandatory: PIPELINE_NAME,BUILD_STATUS
+	eval "$$(make aws-assume-role-export-variables)"
+	eval "$$(make secret-fetch-and-export-variables NAME=$(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-$(PROFILE)/deployment)"
+	make slack-it
+
+# --------------------------------------
+
+pipeline-check-resources: ## Check all the pipeline deployment supporting resources - optional: PROFILE=[name]
+	profiles="$$(make project-list-profiles)"
+	# table: $(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-deployment
+	# secret: $(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-$(PROFILE)/deployment
+	# bucket: $(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-$(PROFILE)-deployment
+	# certificate: SSL_DOMAINS_PROD
+	# repos: DOCKER_REPOSITORIES
+
+pipeline-create-resources: ## Create all the pipeline deployment supporting resources - optional: PROFILE=[name]
+	profiles="$$(make project-list-profiles)"
+	#make aws-dynamodb-create NAME=$(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-deployment ATTRIBUTE_DEFINITIONS= KEY_SCHEMA=
+	#make secret-create NAME=$(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-$(PROFILE)/deployment VARS=DB_PASSWORD,SMTP_PASSWORD,SLACK_WEBHOOK_URL
+	#make aws-s3-create NAME=$(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-$(PROFILE)-deployment
+	#make ssl-request-certificate-prod SSL_DOMAINS_PROD
+	#make docker-create-repository NAME=NAME_TEMPLATE_TO_REPLACE
+	make secret-create \
+		NAME=$(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-dev/deployment \
+		VARS=SLACK_WEBHOOK_URL
 
 # ==============================================================================
 

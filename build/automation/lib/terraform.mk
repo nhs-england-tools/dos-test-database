@@ -1,8 +1,8 @@
 TERRAFORM_DIR = $(PROJECT_DIR)/infrastructure/stacks
 TERRAFORM_DIR_REL = $(shell echo $(TERRAFORM_DIR) | sed "s;$(PROJECT_DIR);;g")
-TERRAFORM_STATE_KEY = $(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)/$(PROFILE)
-TERRAFORM_STATE_LOCK = $(or $(TEXAS_TERRAFORM_STATE_LOCK), terraform-service-state-lock-$(PROFILE))
-TERRAFORM_STATE_STORE = $(or $(TEXAS_TERRAFORM_STATE_STORE), terraform-service-state-store-$(PROFILE))
+TERRAFORM_STATE_KEY = $(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)/$(ENVIRONMENT)
+TERRAFORM_STATE_LOCK = $(or $(TEXAS_TERRAFORM_STATE_LOCK), terraform-service-state-lock-$(ENVIRONMENT))
+TERRAFORM_STATE_STORE = $(or $(TEXAS_TERRAFORM_STATE_STORE), terraform-service-state-store-$(ENVIRONMENT))
 TERRAFORM_VERSION = 0.13.1
 
 # ==============================================================================
@@ -95,7 +95,7 @@ terraform-delete-state: ### Delete the Terraform state - mandatory: STACK|STACKS
 terraform-export-variables: ### Get environment variables as TF_VAR_[name] variables - return: [variables export]
 	make terraform-export-variables-from-shell PATTERN="^(AWS|TX|TEXAS)"
 	make terraform-export-variables-from-shell PATTERN="^(DB|DATABASE|APP|APPLICATION|UI|API|SERVER|HOST|URL)"
-	make terraform-export-variables-from-shell PATTERN="^(PROFILE|BUILD|PROGRAMME|SERVICE|PROJECT)"
+	make terraform-export-variables-from-shell PATTERN="^(PROFILE|ENVIRONMENT|BUILD|PROGRAMME|SERVICE|PROJECT)" EXCLUDE="^(BUILD_COMMIT_MESSAGE)"
 
 terraform-export-variables-from-secret: ### Get secret as TF_VAR_[name] variables - mandatory: NAME=[secret name]; return: [variables export]
 	if [ -n "$(NAME)" ]; then
@@ -104,9 +104,10 @@ terraform-export-variables-from-secret: ### Get secret as TF_VAR_[name] variable
 		echo "$$exports"
 	fi
 
-terraform-export-variables-from-shell: ### Convert environment variables as TF_VAR_[name] variables - mandatory: VARS=[comma-separated environment variable names]|PATTERN="^AWS_"; return: [variables export]
+terraform-export-variables-from-shell: ### Convert environment variables as TF_VAR_[name] variables - mandatory: VARS=[comma-separated environment variable names]|PATTERN="^AWS_"; optional: EXCLUDE=[pattern]; return: [variables export]
 	if [ -n "$(PATTERN)" ]; then
-		for str in $$(env | grep -iE "$(PATTERN)"); do
+		[ -n "$(EXCLUDE)" ] && exclude="$(EXCLUDE)" || exclude=$$(make secret-random)
+		for str in $$(env | grep -iE "$(PATTERN)" | sed -e 's/[[:space:]]*$$//' | grep -Ev '[A-Za-z0-9_]+=$$' | grep -Ev "$$exclude"); do
 			key=$$(cut -d "=" -f1 <<<"$$str" | tr '[:upper:]' '[:lower:]')
 			value=$$(cut -d "=" -f2- <<<"$$str")
 			echo "export TF_VAR_$${key}=$${value}"
@@ -154,7 +155,7 @@ _terraform-initialise: ### Initialise infrastructure state - mandatory: STACK=[n
 			-backend-config="bucket=$(TERRAFORM_STATE_STORE)" \
 			-backend-config="dynamodb_table=$(TERRAFORM_STATE_LOCK)" \
 			-backend-config="encrypt=true" \
-			-backend-config="key=$(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)/$(PROFILE)/$(STACK)/terraform.state" \
+			-backend-config="key=$(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)/$(ENVIRONMENT)/$(STACK)/terraform.state" \
 			-backend-config="region=$(AWS_REGION)" \
 	"
 
