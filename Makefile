@@ -123,32 +123,27 @@ image-push: # Push the data and database images to the registry
 	make docker-push NAME=database VERSION=$$(cat build/docker/data/.version)
 
 instance-plan: # Show the creation instance plan - optional: DB_INSTANCE_NAME=[instance name, defaults to "test"]
-	eval "$$(make secret-fetch-and-export-variables PROFILE=dev NAME=$(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-dev/deployment)"
-	make terraform-plan \
-		PROFILE=dev \
-		DB_INSTANCE_NAME=$(or $(DB_INSTANCE_NAME), test)
+	export PROFILE=dev
+	eval "$$(make secret-fetch-and-export-variables NAME=$(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-dev/deployment)"
+	make terraform-plan DB_INSTANCE_NAME=$(or $(DB_INSTANCE_NAME), test)
 
 instance-create: project-config # Create an instance - optional: DB_INSTANCE_NAME=[instance name, defaults to "test"]
-	eval "$$(make secret-fetch-and-export-variables PROFILE=dev NAME=$(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-dev/deployment)"
-	make terraform-apply-auto-approve \
-		PROFILE=dev \
-		DB_INSTANCE_NAME=$(or $(DB_INSTANCE_NAME), test)
-	make aws-rds-describe-instance \
-		PROFILE=dev \
-		DB_INSTANCE_NAME=$(or $(DB_INSTANCE_NAME), test)
+	export PROFILE=dev
+	eval "$$(make secret-fetch-and-export-variables NAME=$(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-dev/deployment)"
+	make terraform-apply-auto-approve DB_INSTANCE_NAME=$(or $(DB_INSTANCE_NAME), test)
+	make aws-rds-describe-instance DB_INSTANCE_NAME=$(or $(DB_INSTANCE_NAME), test)
 
 instance-destroy: # Destroy the instance - optional: DB_INSTANCE_NAME=[instance name, defaults to "test"]
-	eval "$$(make secret-fetch-and-export-variables PROFILE=dev NAME=$(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-dev/deployment)"
-	make terraform-destroy-auto-approve \
-		PROFILE=dev \
-		DB_INSTANCE_NAME=$(or $(DB_INSTANCE_NAME), test)
+	export PROFILE=dev
+	eval "$$(make secret-fetch-and-export-variables NAME=$(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-dev/deployment)"
+	make terraform-destroy-auto-approve DB_INSTANCE_NAME=$(or $(DB_INSTANCE_NAME), test)
 
 instance-populate: # Populate the instance with the data - optional: DB_INSTANCE_NAME=[instance name, defaults to "test"],VERSION=[version or tag of the data image, defaults to the just built image]
-	eval "$$(make secret-fetch-and-export-variables PROFILE=dev NAME=$(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-dev/deployment)"
+	export PROFILE=dev
+	eval "$$(make secret-fetch-and-export-variables NAME=$(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-dev/deployment)"
 	make k8s-deploy-job \
 		STACK=data \
 		SECONDS=600 \
-		PROFILE=dev \
 		DB_INSTANCE_NAME=$(or $(DB_INSTANCE_NAME), test) \
 		VERSION=$(or $(VERSION), $$(cat build/docker/data/.version))
 

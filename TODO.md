@@ -13,3 +13,4 @@
 - Consider a different source of the Core DoS database dump, i.e. Profile Updater nightly data feed
 - Currently the Jenkins AWS role does not have permissions to describe RDS
 - There is no security group that would provide access to the database for a developer
+- Allow to create multiple DoS schemas in a single database instance
