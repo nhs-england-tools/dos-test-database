@@ -9,11 +9,12 @@ DOCKER_NETWORK = $(PROJECT_GROUP_SHORT)/$(PROJECT_NAME_SHORT)/$(BUILD_ID)
 DOCKER_REGISTRY = $(AWS_ECR)/$(PROJECT_GROUP_SHORT)/$(PROJECT_NAME_SHORT)
 DOCKER_LIBRARY_REGISTRY = nhsd
 
-DOCKER_ALPINE_VERSION = 3.12.0
-DOCKER_COMPOSER_VERSION = 1.10.10
-DOCKER_DOTNET_VERSION = 3.1.401
-DOCKER_ELASTICSEARCH_VERSION = 7.9.2
-DOCKER_GRADLE_VERSION = 6.6.1-jdk$(JAVA_VERSION)
+DOCKER_ALPINE_VERSION = 3.12.1
+DOCKER_COMPOSER_VERSION = 2.0.6
+DOCKER_DIND_VERSION = 19.03.13-dind
+DOCKER_DOTNET_VERSION = 3.1.404
+DOCKER_ELASTICSEARCH_VERSION = 7.10.0
+DOCKER_GRADLE_VERSION = 6.7.0-jdk$(JAVA_VERSION)
 DOCKER_LOCALSTACK_VERSION = $(LOCALSTACK_VERSION)
 DOCKER_MAVEN_VERSION = 3.6.3-openjdk-$(JAVA_VERSION)-slim
 DOCKER_NGINX_VERSION = 1.19.2-alpine
@@ -21,7 +22,7 @@ DOCKER_NODE_VERSION = $(NODE_VERSION)-alpine
 DOCKER_OPENJDK_VERSION = $(JAVA_VERSION)-alpine
 DOCKER_POSTGRES_VERSION = $(POSTGRES_VERSION)-alpine
 DOCKER_POSTMAN_NEWMAN_VERSION = $(POSTMAN_NEWMAN_VERSION)-alpine
-DOCKER_PULUMI_VERSION = v2.9.1
+DOCKER_PULUMI_VERSION = v2.13.2
 DOCKER_PYTHON_VERSION = $(PYTHON_VERSION)-alpine
 DOCKER_TERRAFORM_VERSION = $(TERRAFORM_VERSION)
 DOCKER_WIREMOCK_VERSION = $(WIREMOCK_VERSION)-alpine
@@ -29,9 +30,10 @@ DOCKER_WIREMOCK_VERSION = $(WIREMOCK_VERSION)-alpine
 DOCKER_LIBRARY_ELASTICSEARCH_VERSION = $(shell cat $(DOCKER_LIB_IMAGE_DIR)/elasticsearch/VERSION 2> /dev/null)
 DOCKER_LIBRARY_NGINX_VERSION = $(shell cat $(DOCKER_LIB_IMAGE_DIR)/nginx/VERSION 2> /dev/null)
 DOCKER_LIBRARY_NODE_VERSION = $(shell cat $(DOCKER_LIB_IMAGE_DIR)/node/VERSION 2> /dev/null)
+DOCKER_LIBRARY_PIPELINE_VERSION = $(shell cat $(DOCKER_LIB_IMAGE_DIR)/pipeline/VERSION 2> /dev/null)
 DOCKER_LIBRARY_POSTGRES_VERSION = $(shell cat $(DOCKER_LIB_IMAGE_DIR)/postgres/VERSION 2> /dev/null)
-DOCKER_LIBRARY_PYTHON_VERSION = $(shell cat $(DOCKER_LIB_IMAGE_DIR)/python/VERSION 2> /dev/null)
 DOCKER_LIBRARY_PYTHON_APP_VERSION = $(shell cat $(DOCKER_LIB_IMAGE_DIR)/python-app/VERSION 2> /dev/null)
+DOCKER_LIBRARY_PYTHON_VERSION = $(shell cat $(DOCKER_LIB_IMAGE_DIR)/python/VERSION 2> /dev/null)
 DOCKER_LIBRARY_TOOLS_VERSION = $(shell cat $(DOCKER_LIB_IMAGE_DIR)/tools/VERSION 2> /dev/null)
 
 COMPOSE_HTTP_TIMEOUT := $(or $(COMPOSE_HTTP_TIMEOUT), 6000)
@@ -87,15 +89,26 @@ docker-build docker-image: ### Build Docker image - mandatory: NAME; optional: V
 	fi
 	# Build
 	dir=$$(make _docker-get-dir)
+	export IMAGE=$$reg/$(NAME)$(shell [ -n "$(EXAMPLE)" ] && echo -example)
+	export VERSION=$$(make docker-image-get-version)
+	make -s file-replace-variables FILE=$$dir/Dockerfile.effective
 	docker build --rm \
-		--build-arg IMAGE=$$reg/$(NAME)$(shell [ -n "$(EXAMPLE)" ] && echo -example) \
-		--build-arg VERSION=$$(make docker-image-get-version) \
+		--build-arg IMAGE=$$IMAGE \
+		--build-arg VERSION=$$VERSION \
 		--build-arg BUILD_ID=$(BUILD_ID) \
 		--build-arg BUILD_DATE=$(BUILD_DATE) \
 		--build-arg BUILD_REPO=$(BUILD_REPO) \
 		--build-arg BUILD_BRANCH=$(BUILD_BRANCH) \
 		--build-arg BUILD_COMMIT_HASH=$(BUILD_COMMIT_HASH) \
 		--build-arg BUILD_COMMIT_DATE=$(BUILD_COMMIT_DATE) \
+		--label name=$$IMAGE \
+		--label version=$$VERSION \
+		--label build-id=$(BUILD_ID) \
+		--label build-date=$(BUILD_DATE) \
+		--label build-repo=$(BUILD_REPO) \
+		--label build-branch=$(BUILD_BRANCH) \
+		--label build-commit-hash=$(BUILD_COMMIT_HASH) \
+		--label build-commit-date=$(BUILD_COMMIT_DATE) \
 		$(BUILD_OPTS) $$cache_from \
 		--file $$dir/Dockerfile.effective \
 		--tag $$reg/$(NAME)$(shell [ -n "$(EXAMPLE)" ] && echo -example):$$(make docker-image-get-version) \
@@ -121,7 +134,7 @@ docker-test: ### Test image - mandatory: NAME; optional: ARGS,CMD,GOSS_OPTS,EXAM
 		$(CMD)
 
 docker-login: ### Log into the Docker registry - optional: DOCKER_USERNAME,DOCKER_PASSWORD
-	if [ -n "$(DOCKER_USERNAME)" ] && [ -n "$(DOCKER_PASSWORD)" ]; then
+	if [ -n "$(DOCKER_USERNAME)" ] && [ -n "$$(make _docker-get-login-password)" ]; then
 		make _docker-get-login-password | docker login --username "$(DOCKER_USERNAME)" --password-stdin
 	else
 		make aws-ecr-get-login-password | docker login --username AWS --password-stdin $(AWS_ECR)
@@ -194,25 +207,30 @@ docker-create-dockerfile: ### Create effective Dockerfile - mandatory: NAME; op
 	cd $$(make _docker-get-dir)
 	cat $(or $(FILE), Dockerfile) $(DOCKER_LIB_DIR)/image/Dockerfile.metadata > Dockerfile.effective
 	sed -i " \
-		s#FROM $(DOCKER_LIBRARY_REGISTRY)/elasticsearch:latest#FROM $(DOCKER_LIBRARY_REGISTRY)/elasticsearch:${DOCKER_LIBRARY_ELASTICSEARCH_VERSION}#g; \
-		s#FROM $(DOCKER_LIBRARY_REGISTRY)/nginx:latest#FROM $(DOCKER_LIBRARY_REGISTRY)/nginx:${DOCKER_LIBRARY_NGINX_VERSION}#g; \
-		s#FROM $(DOCKER_LIBRARY_REGISTRY)/node:latest#FROM $(DOCKER_LIBRARY_REGISTRY)/node:${DOCKER_LIBRARY_NODE_VERSION}#g; \
-		s#FROM $(DOCKER_LIBRARY_REGISTRY)/postgres:latest#FROM $(DOCKER_LIBRARY_REGISTRY)/postgres:${DOCKER_LIBRARY_POSTGRES_VERSION}#g; \
-		s#FROM $(DOCKER_LIBRARY_REGISTRY)/python:latest#FROM $(DOCKER_LIBRARY_REGISTRY)/python:${DOCKER_LIBRARY_PYTHON_VERSION}#g; \
-		s#FROM $(DOCKER_LIBRARY_REGISTRY)/python-app:latest#FROM $(DOCKER_LIBRARY_REGISTRY)/python-app:${DOCKER_LIBRARY_PYTHON_APP_VERSION}#g; \
-		s#FROM $(DOCKER_LIBRARY_REGISTRY)/tools:latest#FROM $(DOCKER_LIBRARY_REGISTRY)/tools:${DOCKER_LIBRARY_TOOLS_VERSION}#g; \
-		s#FROM alpine:latest#FROM alpine:${DOCKER_ALPINE_VERSION}#g; \
-		s#FROM bitnami/elasticsearch:latest#FROM bitnami/elasticsearch:${DOCKER_ELASTICSEARCH_VERSION}#g; \
-		s#FROM gradle:latest#FROM gradle:${DOCKER_GRADLE_VERSION}#g; \
-		s#FROM maven:latest#FROM maven:${DOCKER_MAVEN_VERSION}#g; \
-		s#FROM mcr.microsoft.com/dotnet/core/sdk:latest#FROM mcr.microsoft.com/dotnet/core/sdk:${DOCKER_DOTNET_VERSION}#g; \
-		s#FROM nginx:latest#FROM nginx:${DOCKER_NGINX_VERSION}#g; \
-		s#FROM node:latest#FROM node:${DOCKER_NODE_VERSION}#g; \
-		s#FROM openjdk:latest#FROM openjdk:${DOCKER_OPENJDK_VERSION}#g; \
-		s#FROM postgres:latest#FROM postgres:${DOCKER_POSTGRES_VERSION}#g; \
-		s#FROM postman/newman:latest#FROM postman/newman:${DOCKER_POSTMAN_NEWMAN_VERSION}#g; \
-		s#FROM python:latest#FROM python:${DOCKER_PYTHON_VERSION}#g; \
-		s#FROM rodolpheche/wiremock:latest#FROM rodolpheche/wiremock:${DOCKER_WIREMOCK_VERSION}#g; \
+		s#DOCKER_REGISTRY#$(DOCKER_REGISTRY)#g; \
+		s#AWS_ECR#$(AWS_ECR)#g; \
+		s#AWS_ACCOUNT_ID_MGMT#$(AWS_ACCOUNT_ID_MGMT)#g; \
+		s#FROM $(DOCKER_LIBRARY_REGISTRY)/elasticsearch:latest#FROM $(DOCKER_LIBRARY_REGISTRY)/elasticsearch:$(DOCKER_LIBRARY_ELASTICSEARCH_VERSION)#g; \
+		s#FROM $(DOCKER_LIBRARY_REGISTRY)/nginx:latest#FROM $(DOCKER_LIBRARY_REGISTRY)/nginx:$(DOCKER_LIBRARY_NGINX_VERSION)#g; \
+		s#FROM $(DOCKER_LIBRARY_REGISTRY)/node:latest#FROM $(DOCKER_LIBRARY_REGISTRY)/node:$(DOCKER_LIBRARY_NODE_VERSION)#g; \
+		s#FROM $(DOCKER_LIBRARY_REGISTRY)/pipeline:latest#FROM $(DOCKER_LIBRARY_REGISTRY)/pipeline:$(DOCKER_LIBRARY_PIPELINE_VERSION)#g; \
+		s#FROM $(DOCKER_LIBRARY_REGISTRY)/postgres:latest#FROM $(DOCKER_LIBRARY_REGISTRY)/postgres:$(DOCKER_LIBRARY_POSTGRES_VERSION)#g; \
+		s#FROM $(DOCKER_LIBRARY_REGISTRY)/python-app:latest#FROM $(DOCKER_LIBRARY_REGISTRY)/python-app:$(DOCKER_LIBRARY_PYTHON_APP_VERSION)#g; \
+		s#FROM $(DOCKER_LIBRARY_REGISTRY)/python:latest#FROM $(DOCKER_LIBRARY_REGISTRY)/python:$(DOCKER_LIBRARY_PYTHON_VERSION)#g; \
+		s#FROM $(DOCKER_LIBRARY_REGISTRY)/tools:latest#FROM $(DOCKER_LIBRARY_REGISTRY)/tools:$(DOCKER_LIBRARY_TOOLS_VERSION)#g; \
+		s#FROM alpine:latest#FROM alpine:$(DOCKER_ALPINE_VERSION)#g; \
+		s#FROM bitnami/elasticsearch:latest#FROM bitnami/elasticsearch:$(DOCKER_ELASTICSEARCH_VERSION)#g; \
+		s#FROM docker:latest#FROM docker:$(DOCKER_DIND_VERSION)#g; \
+		s#FROM gradle:latest#FROM gradle:$(DOCKER_GRADLE_VERSION)#g; \
+		s#FROM maven:latest#FROM maven:$(DOCKER_MAVEN_VERSION)#g; \
+		s#FROM mcr.microsoft.com/dotnet/core/sdk:latest#FROM mcr.microsoft.com/dotnet/core/sdk:$(DOCKER_DOTNET_VERSION)#g; \
+		s#FROM nginx:latest#FROM nginx:$(DOCKER_NGINX_VERSION)#g; \
+		s#FROM node:latest#FROM node:$(DOCKER_NODE_VERSION)#g; \
+		s#FROM openjdk:latest#FROM openjdk:$(DOCKER_OPENJDK_VERSION)#g; \
+		s#FROM postgres:latest#FROM postgres:$(DOCKER_POSTGRES_VERSION)#g; \
+		s#FROM postman/newman:latest#FROM postman/newman:$(DOCKER_POSTMAN_NEWMAN_VERSION)#g; \
+		s#FROM python:latest#FROM python:$(DOCKER_PYTHON_VERSION)#g; \
+		s#FROM rodolpheche/wiremock:latest#FROM rodolpheche/wiremock:$(DOCKER_WIREMOCK_VERSION)#g; \
 	" Dockerfile.effective
 	cd $$dir
 
@@ -453,6 +471,8 @@ docker-run-mvn: ### Run maven container - mandatory: CMD; optional: DIR,ARGS=[Do
 docker-run-node: ### Run node container - mandatory: CMD; optional: DIR,ARGS=[Docker args],VARS_FILE=[Makefile vars file],IMAGE=[image name],CONTAINER=[container name]
 	make docker-config > /dev/null 2>&1
 	mkdir -p $(TMP_DIR)/.cache
+	touch $(TMP_DIR)/.npmrc
+	touch $(TMP_DIR)/.yarnrc
 	image=$$([ -n "$(IMAGE)" ] && echo $(IMAGE) || echo node:$(DOCKER_NODE_VERSION))
 	container=$$([ -n "$(CONTAINER)" ] && echo $(CONTAINER) || echo node-$(BUILD_COMMIT_HASH)-$(BUILD_ID)-$$(echo '$(CMD)$(DIR)' | md5sum | cut -c1-7))
 	docker run --interactive $(_TTY) --rm \
@@ -463,6 +483,8 @@ docker-run-node: ### Run node container - mandatory: CMD; optional: DIR,ARGS=[Do
 		--env-file <(make _docker-get-variables-from-file VARS_FILE=$(VARS_FILE)) \
 		--volume $(PROJECT_DIR):/project \
 		--volume $(TMP_DIR)/.cache:/home/default/.cache \
+		--volume $(TMP_DIR)/.npmrc:/home/default/.npmrc \
+		--volume $(TMP_DIR)/.yarnrc:/home/default/.yarnrc \
 		--network $(DOCKER_NETWORK) \
 		--workdir /project/$(shell echo $(abspath $(DIR)) | sed "s;$(PROJECT_DIR);;g") \
 		$(ARGS) \
@@ -731,13 +753,13 @@ docker-image-get-digest: ### Get image digest by matching tag pattern - mandato
 		REPO=$$(make _docker-get-reg)/$(NAME) \
 		TAG=$(or $(VERSION), $(TAG))
 
-docker-image-find-and-tag-as: ### Find image based on commit and tag it - mandatory: TAG,IMAGE=[image name]; optional: COMMIT=[git commit hash, defaults to HEAD]
+docker-image-find-and-version-as: ### Find image based on git commit hash and tag it - mandatory: VERSION|TAG=[new version/tag],IMAGE=[image name]; optional: COMMIT=[git commit hash, defaults to HEAD]
 	commit=$(or $(COMMIT), master)
 	hash=$$(make git-commit-get-hash COMMIT=$$commit)
 	digest=$$(make docker-image-get-digest NAME=$(IMAGE) TAG=$$hash)
 	make docker-pull NAME=$(IMAGE) DIGEST=$$digest
-	make docker-tag NAME=$(IMAGE) DIGEST=$$digest TAG=$(TAG)
-	make docker-push NAME=$(IMAGE) TAG=$(TAG)
+	make docker-tag NAME=$(IMAGE) DIGEST=$$digest TAG=$(or $(VERSION), $(TAG)
+	make docker-push NAME=$(IMAGE) TAG=$(or $(VERSION), $(TAG)
 
 # ==============================================================================
 
@@ -750,4 +772,5 @@ docker-image-find-and-tag-as: ### Find image based on commit and tag it - mandat
 	_docker-is-lib-image \
 	docker-image-get-digest \
 	docker-image-get-version \
-	docker-image-set-version
+	docker-image-set-version \
+	docker-login
