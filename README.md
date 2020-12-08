@@ -1,62 +1,57 @@
 # DoS Test Database
 
-## Quick Deploy (WIP)
+## Table of Contents
 
-This assumes you've MFA-ed to get and set your AWS CLI credentials
+- [DoS Test Database](#dos-test-database)
+  - [Table of Contents](#table-of-contents)
+  - [Quick Start](#quick-start)
+    - [Development Requirements](#development-requirements)
+    - [Local Environment Configuration](#local-environment-configuration)
+    - [Local Project Setup](#local-project-setup)
 
-### With Terraform
+This project provides a way to build a Core DoS database from the test data.
 
-    cd infrastructure/stacks/service
+## Quick Start
 
-The directory where to run the terraform commands from
+### Development Requirements
 
-#### Initialize Terraform State
+- macOS operating system provisioned with the `curl -L bit.ly/make-devops-macos | bash` command
+- `iTerm2` command-line terminal and `Visual Studio Code` source code editor, which will be installed automatically for you in the next steps
+- Before starting any work, please read [CONTRIBUTING.md](documentation/CONTRIBUTING.md)
 
-    terraform init \
-                -backend-config="bucket=nhsd-texasplatform-terraform-service-state-store-lk8s-nonprod" \
-                -backend-config="dynamodb_table=nhsd-texasplatform-terraform-service-state-lock-texas-lk8s-nonprod" \
-                -backend-config="encrypt=true" \
-                -backend-config="key=uec-dos-test-database-service-local/terraform.state" \
-                -backend-config="region=eu-west-2"
+### Local Environment Configuration
 
-Run this to setup your terraform state in a AWS S3 bucket in AWS (TEXAS)
+    git clone [project-url]
+    cd ./[project-dir]
 
-#### Plan Terraform
+    make macos-setup
+    make devops-setup-aws-accounts
+    make trust-certificate
 
-    terraform plan --var-file=../tfvars/nonprod.tfvars
+### Local Project Setup
 
-Run this to see what effects this will have on your infrastructure
+Start up a local version of the Core DoS test database
 
-#### Apply Terraform
+    make download
+    make build
+    make start log
 
-    terraform apply --var-file=../tfvars/nonprod.tfvars
+Build a reusable database
 
-Run this to see what effect this will have on the infrastructure and entering 'yes' at the end will APPLY this to your AWS (TEXAS) infrastructure (use caution)
+    make image-create
 
-#### Destroy Terraform
+This produces `dtdb/database` Docker image that can be started up using the following command
 
-    terraform destroy --var-file=../tfvars/nonprod.tfvars
+    docker run -it --name db-dos \
+      --publish 5432:5432 \
+      --detach \
+      000000000000.dkr.ecr.eu-west-2.amazonaws.com/uec-tools/dtdb/database:latest
+    docker logs --follow db-dos
 
-Run this to see what would be deleted from the infrastructure and entering 'yes' at the end will DELETE the resources from your AWS (TEXAS) infrastructure (use caution)
+Connect to the database
 
-### With Make DevOps Targets
-
-Running the follow from the project root
-
-#### Initialize Terraform State & Plan
-
-    make terraform-plan STACKS=service OPTS="--var-file=infrastructure/stacks/tfvars/nonprod.tfvars"
-
-Run this to initialize the terraform state and place it in S3, and then run a terraform plan
-
-#### Apply Terraform with Make Target
-
-    make terraform-apply STACKS=service OPTS="--var-file=infrastructure/stacks/tfvars/nonprod.tfvars"
-
-Run this to see what effect this will have on the infrastructure and entering 'yes' at the end will APPLY this to your AWS (TEXAS) infrastructure (use caution)
-
-#### Destroy Terraform with Make Target
-
-    make terraform-destroy STACKS=service OPTS="--var-file=infrastructure/stacks/tfvars/nonprod.tfvars"
-
-Run this to see what would be deleted from the infrastructure and entering 'yes' at the end will DELETE the resources from your AWS (TEXAS) infrastructure (use caution)
+- Host: `localhost`
+- Port: `5432`
+- Database name: `pathwaysdos_dev`
+- Username: `release_manager`
+- Password: `postgres`

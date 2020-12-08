@@ -89,14 +89,17 @@ devops-copy: ### Copy the DevOps automation toolchain scripts to given destinati
 		rsync -rav \
 			--include=build/ \
 			--exclude=automation/etc/certificate/certificate.* \
+			--exclude=automation/tmp/* \
 			--exclude=automation/var/project.mk \
-			--exclude=Jenkinsfile \
+			--exclude=jenkins/Jenkinsfile* \
 			build/* \
 			$(DIR)/build
 		cp -fv .github/CODEOWNERS $(DIR)/.github/CODEOWNERS && sed -i "s;@nhsd-exeter/admins;@nhsd-exeter/maintainers;" $(DIR)/.github/CODEOWNERS
+		cp -fv build/automation/tmp/.gitignore $(DIR)/build/automation/tmp/.gitignore
 		cp -fv LICENSE.md $(DIR)/build/automation/LICENSE.md
 		[ -f $(DIR)/build/automation/etc/certificate/*.pem ] && rm -fv $(DIR)/build/automation/etc/certificate/.gitignore
 		# Project key files
+		[ ! -f $(DIR)/build/automation/var/project.mk ] && cp -fv build/automation/lib/project/template/build/automation/var/project.mk $(DIR)/build/automation/var/project.mk
 		[ ! -f $(DIR)/Makefile ] && cp -fv build/automation/lib/project/template/Makefile $(DIR)
 		cp -fv build/automation/lib/project/template/.editorconfig $(DIR)
 		cp -fv build/automation/lib/project/template/.gitattributes $(DIR)
@@ -104,14 +107,11 @@ devops-copy: ### Copy the DevOps automation toolchain scripts to given destinati
 		cp -fv build/automation/lib/project/template/project.code-workspace $(DIR)
 		# Project documentation
 		[ ! -f $(DIR)/README.md ] && cp -fv build/automation/lib/project/template/README.md $(DIR)
-		[ ! -f $(DIR)/TODO.md ] && cp -fv build/automation/lib/project/template/TODO.md $(DIR)/documentation
+		[ -f $(DIR)/TODO.md ] && mv -fv $(DIR)/TODO.md $(DIR)/documentation; [ ! -f $(DIR)/documentation/TODO.md ] && cp -fv build/automation/lib/project/template/TODO.md $(DIR)/documentation
 		cp -fv build/automation/lib/project/template/CONTRIBUTING.md $(DIR)/documentation
 		cp -fv build/automation/lib/project/template/ONBOARDING.md $(DIR)/documentation
 		cp -fv build/automation/lib/project/template/documentation/adr/README.md $(DIR)/documentation/adr
 		cp -fv build/automation/lib/project/template/documentation/diagrams/DevOps-Pipelines.png $(DIR)/documentation/diagrams
-		# ---
-		[ -f $(DIR)/CONTRIBUTING.md ] && mv -fv $(DIR)/CONTRIBUTING.md $(DIR)/documentation
-		[ -f $(DIR)/TODO.md ] && mv -fv $(DIR)/TODO.md $(DIR)/documentation
 		# ---
 		make _devops-project-clean DIR=$(DIR)
 		# ---
@@ -153,14 +153,16 @@ devops-update devops-synchronise: ### Update/upgrade the DevOps automation toolc
 			--include=build/ \
 			--exclude=automation/etc/certificate/certificate.* \
 			--exclude=automation/var/project.mk \
-			--exclude=Jenkinsfile \
+			--exclude=jenkins/Jenkinsfile* \
 			build/* \
 			$(PARENT_PROJECT_DIR)/build
 		cp -fv .github/CODEOWNERS $(PARENT_PROJECT_DIR)/.github/CODEOWNERS && sed -i "s;@nhsd-exeter/admins;@nhsd-exeter/maintainers;" $(PARENT_PROJECT_DIR)/.github/CODEOWNERS
+		cp -fv build/automation/tmp/.gitignore $(PARENT_PROJECT_DIR)/build/automation/tmp/.gitignore
 		cp -fv LICENSE.md $(PARENT_PROJECT_DIR)/build/automation/LICENSE.md
 		[ -f $(PARENT_PROJECT_DIR)/build/automation/etc/certificate/*.pem ] && rm -fv $(PARENT_PROJECT_DIR)/build/automation/etc/certificate/.gitignore
 		[ -f $(PARENT_PROJECT_DIR)/docker/docker-compose.yml ] && rm -fv $(PARENT_PROJECT_DIR)/docker/.gitkeep
 		# Project key files
+		[ ! -f $(PARENT_PROJECT_DIR)/build/automation/var/project.mk ] && cp -fv build/automation/lib/project/template/build/automation/var/project.mk $(PARENT_PROJECT_DIR)/build/automation/var/project.mk
 		[ ! -f $(PARENT_PROJECT_DIR)/Makefile ] && cp -fv build/automation/lib/project/template/Makefile $(PARENT_PROJECT_DIR)
 		cp -fv build/automation/lib/project/template/.editorconfig $(PARENT_PROJECT_DIR)
 		cp -fv build/automation/lib/project/template/.gitattributes $(PARENT_PROJECT_DIR)
@@ -168,14 +170,11 @@ devops-update devops-synchronise: ### Update/upgrade the DevOps automation toolc
 		cp -fv build/automation/lib/project/template/project.code-workspace $(PARENT_PROJECT_DIR)
 		# Project documentation
 		[ ! -f $(PARENT_PROJECT_DIR)/README.md ] && cp -fv build/automation/lib/project/template/README.md $(PARENT_PROJECT_DIR)
-		[ ! -f $(PARENT_PROJECT_DIR)/TODO.md ] && cp -fv build/automation/lib/project/template/TODO.md $(PARENT_PROJECT_DIR)/documentation
+		[ -f $(PARENT_PROJECT_DIR)/TODO.md ] && mv -fv $(PARENT_PROJECT_DIR)/TODO.md $(PARENT_PROJECT_DIR)/documentation; [ ! -f $(PARENT_PROJECT_DIR)/documentation/TODO.md ] && cp -fv build/automation/lib/project/template/TODO.md $(PARENT_PROJECT_DIR)/documentation
 		cp -fv build/automation/lib/project/template/CONTRIBUTING.md $(PARENT_PROJECT_DIR)/documentation
 		cp -fv build/automation/lib/project/template/ONBOARDING.md $(PARENT_PROJECT_DIR)/documentation
 		cp -fv build/automation/lib/project/template/documentation/adr/README.md $(PARENT_PROJECT_DIR)/documentation/adr
 		cp -fv build/automation/lib/project/template/documentation/diagrams/DevOps-Pipelines.png $(PARENT_PROJECT_DIR)/documentation/diagrams
-		# ---
-		[ -f $(PARENT_PROJECT_DIR)/CONTRIBUTING.md ] && mv -fv $(PARENT_PROJECT_DIR)/CONTRIBUTING.md $(PARENT_PROJECT_DIR)/documentation
-		[ -f $(PARENT_PROJECT_DIR)/TODO.md ] && mv -fv $(PARENT_PROJECT_DIR)/TODO.md $(PARENT_PROJECT_DIR)/documentation
 		# ---
 		make _devops-project-clean DIR=$(PARENT_PROJECT_DIR)
 		# ---
@@ -223,7 +222,7 @@ _devops-project-clean: ### Clean up the project structure - mandatory: DIR=[proj
 	# Remove not needed project files
 	[ -n "$(DIR)" ] && rm -f $(DIR)/build/docker/.gitkeep
 	# Remove empty project directories
-	[ -n "$(DIR)" ] && rmdir $(DIR)/build/docker ||:
+	[ -n "$(DIR)" ] && rmdir $(DIR)/build/docker 2> /dev/null ||:
 	# Remove old project files and directories
 	rm -rf \
 		~/bin/docker-compose-processor \
@@ -244,12 +243,15 @@ _devops-project-clean: ### Clean up the project structure - mandatory: DIR=[proj
 		$(DIR)/build/automation/lib/k8s/template/deployment/stacks/stack/base/template/STACK_TEMPLATE_TO_REPLACE/network-policy.yaml \
 		$(DIR)/build/automation/lib/slack/jenkins-pipeline.json \
 		$(DIR)/build/automation/usr/mfa-aliases \
+		$(DIR)/build/automation/var/*.mk.default \
 		$(DIR)/build/automation/var/helpers.mk.default \
 		$(DIR)/build/automation/var/override.mk.default \
 		$(DIR)/build/automation/var/platform-texas/account-*.mk \
+		$(DIR)/build/automation/var/profile/*.mk.default \
 		$(DIR)/build/docker/Dockerfile.metadata \
 		$(DIR)/documentation/DevOps-Pipelines.png \
-		$(DIR)/documentation/DevOps.drawio
+		$(DIR)/documentation/DevOps.drawio \
+		$(DIR)/CONTRIBUTING.md
 	exit 0
 
 _devops-synchronise-select-tag-to-install: ### TODO: This is WIP
@@ -441,7 +443,7 @@ GIT_BRANCH_PATTERN := $(GIT_BRANCH_PATTERN_MAIN)|$(GIT_BRANCH_PATTERN_PREFIX)/$(
 
 BUILD_ID := $(or $(or $(or $(BUILD_ID), $(CIRCLE_BUILD_NUM)), $(CODEBUILD_BUILD_NUMBER)), 0)
 BUILD_DATE := $(or $(BUILD_DATE), $(shell date -u +"%Y-%m-%dT%H:%M:%S%z"))
-BUILD_TIMESTAMP := $(shell date --date=$(BUILD_DATE) -u +"%Y%m%d%H%M%S")
+BUILD_TIMESTAMP := $(shell date --date=$(BUILD_DATE) -u +"%Y%m%d%H%M%S" 2> /dev/null)
 BUILD_REPO := $(or $(shell git config --get remote.origin.url 2> /dev/null ||:), unknown)
 BUILD_BRANCH := $(if $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null | grep -E ^HEAD$ ||:),$(or $(shell git name-rev --name-only HEAD 2> /dev/null | sed "s;remotes/origin/;;g" ||:), unknown),$(or $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null | sed "s;remotes/origin/;;g" ||:), unknown))
 BUILD_COMMIT_HASH := $(or $(shell git rev-parse --short HEAD 2> /dev/null ||:), unknown)
@@ -457,7 +459,7 @@ GOSS_PATH := $(BIN_DIR)/goss-linux-amd64
 SETUP_COMPLETE_FLAG_FILE := $(TMP_DIR)/.make-devops-setup-complete
 
 PROFILE := $(or $(PROFILE), local)
-ENVIRONMENT := $(or $(ENVIRONMENT), $(shell ([ $(PROFILE) = local ] && echo local) || ( echo $(BUILD_BRANCH) | grep -Eoq '$(GIT_BRANCH_PATTERN_SUFFIX)' && (echo $(BUILD_BRANCH) | grep -Eo '[A-Za-z]{2,5}-[0-9]{1,5}' | tr '[:upper:]' '[:lower:]') || ([ $(BUILD_BRANCH) = master ] && echo $(PROFILE)))))
+ENVIRONMENT := $(or $(ENVIRONMENT), $(or $(shell ([ $(PROFILE) = local ] && echo local) || ( echo $(BUILD_BRANCH) | grep -Eoq '$(GIT_BRANCH_PATTERN_SUFFIX)' && (echo $(BUILD_BRANCH) | grep -Eo '[A-Za-z]{2,5}-[0-9]{1,5}' | tr '[:upper:]' '[:lower:]') || ([ $(BUILD_BRANCH) = master ] && echo $(PROFILE)))), unknown))
 
 # ==============================================================================
 # `make` configuration
@@ -484,13 +486,13 @@ ifneq ("$(wildcard $(VAR_DIR)/*.mk)", "")
 	include $(VAR_DIR)/*.mk
 else
 	# Load only if the service project file doesn't exist
-	-include $(VAR_DIR)/project.mk.default
+	-include $(LIB_DIR)/project/template/build/automation/var/project.mk
 endif
 ifneq ("$(wildcard $(VAR_DIR)/profile/$(PROFILE).mk)", "")
 	include $(VAR_DIR)/profile/$(PROFILE).mk
 else
 	# Load only if the service profile file doesn't exist
-	-include $(VAR_DIR)/profile/$(PROFILE).mk.default
+	-include $(LIB_DIR)/project/template/build/automation/var/profile/$(PROFILE).mk
 endif
 ifeq ("$(_DEVOPS_RUN_TEST)", "true")
 	include $(TEST_DIR)/*.mk
@@ -571,47 +573,47 @@ ifneq (0, $(shell xcode-select -p > /dev/null 2>&1; echo $$?))
 $(info )
 $(info $(shell tput setaf 4; echo "Installation of the Xcode Command Line Tools has just been triggered automatically..."; tput sgr0))
 $(info )
-$(error $(shell tput setaf 1; echo "ERROR: Please, before proceeding install the Xcode Command Line Tools"; tput sgr0))
+$(error $(shell tput setaf 202; echo "WARNING: Please, before proceeding install the Xcode Command Line Tools"; tput sgr0))
 endif
 # macOS: Homebrew
 ifneq (0, $(shell which brew > /dev/null 2>&1; echo $$?))
 $(info )
 $(info Run $(shell tput setaf 4; echo '/usr/bin/ruby -e "$$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"'; tput sgr0))
 $(info )
-$(error $(shell tput setaf 1; echo "ERROR: Please, before proceeding install the brew package manager. Copy and paste in your terminal the above command, then execute it"; tput sgr0))
+$(error $(shell tput setaf 202; echo "WARNING: Please, before proceeding install the brew package manager. Copy and paste in your terminal the above command, then execute it"; tput sgr0))
 endif
 # macOS: GNU Make
 ifeq (true, $(shell [ ! -f /usr/local/opt/make/libexec/gnubin/make ] && echo true))
 $(info )
 $(info Run $(shell tput setaf 4; echo "brew install make"; tput sgr0))
 $(info )
-$(error $(shell tput setaf 1; echo "ERROR: Please, before proceeding install the GNU make tool. Copy and paste in your terminal the above command, then execute it"; tput sgr0))
+$(error $(shell tput setaf 202; echo "WARNING: Please, before proceeding install the GNU make tool. Copy and paste in your terminal the above command, then execute it"; tput sgr0))
 endif
 ifeq (, $(findstring oneshell, $(.FEATURES)))
 $(info )
 $(info Run $(shell tput setaf 4; echo "export PATH=$(PATH)"; tput sgr0))
 $(info )
-$(error $(shell tput setaf 1; echo "ERROR: Please, before proceeding make sure GNU make is included in your \$$PATH. Copy and paste in your terminal the above command, then execute it"; tput sgr0))
+$(error $(shell tput setaf 202; echo "WARNING: Please, before proceeding make sure GNU make is included in your \$$PATH. Copy and paste in your terminal the above command, then execute it"; tput sgr0))
 endif
 # macOS: $HOME
 ifeq (true, $(shell echo "$(HOME)" | grep -qE '[ ]+' && echo true))
 $(info )
 $(info The $$HOME variable is set to '$(HOME)')
 $(info )
-$(error $(shell tput setaf 1; echo "ERROR: Please, before proceeding make sure your \$$HOME directory does not include spaces"; tput sgr0))
+$(error $(shell tput setaf 202; echo "WARNING: Please, before proceeding make sure your \$$HOME directory does not include spaces"; tput sgr0))
 endif
 else
 # *NIX: GNU Make
 ifeq (, $(findstring oneshell, $(.FEATURES)))
-$(error $(shell tput setaf 1; echo "ERROR: Please, before proceeding make sure your GNU make version supports 'oneshell' feature. On Linux this may mean upgrading to the latest release version"; tput sgr0))
+$(error $(shell tput setaf 202; echo "WARNING: Please, before proceeding make sure your GNU make version supports 'oneshell' feature. On Linux this may mean upgrading to the latest release version"; tput sgr0))
 endif
 # *NIX: Docker
 ifneq (0, $(shell which docker > /dev/null 2>&1; echo $$?))
-$(error $(shell tput setaf 1; echo "ERROR: Please, before proceeding install Docker"; tput sgr0))
+$(error $(shell tput setaf 202; echo "WARNING: Please, before proceeding install Docker"; tput sgr0))
 endif
 # *NIX: Docker Compose
 ifneq (0, $(shell which docker-compose > /dev/null 2>&1; echo $$?))
-$(error $(shell tput setaf 1; echo "ERROR: Please, before proceeding install Docker Compose"; tput sgr0))
+$(error $(shell tput setaf 202; echo "WARNING: Please, before proceeding install Docker Compose"; tput sgr0))
 endif
 endif
 endif

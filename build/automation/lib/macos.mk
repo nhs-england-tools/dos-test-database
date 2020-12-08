@@ -15,7 +15,7 @@ macos-setup devops-setup: ### Provision your MacBook (and become a DevOps ninja)
 	touch $(SETUP_COMPLETE_FLAG_FILE)
 
 macos-prepare:: ### Prepare for installation and configuration of the development dependencies
-	networksetup -setdnsservers Wi-Fi 8.8.8.8
+	networksetup -setdnsservers Wi-Fi 8.8.8.8 ||:
 	sudo chown -R $$(id -u) $$(brew --prefix)/*
 
 macos-update:: ### Update/upgrade all currently installed development dependencies
@@ -454,6 +454,7 @@ _macos-config-visual-studio-code:
 	code --force --install-extension ms-azuretools.vscode-docker
 	code --force --install-extension ms-python.anaconda-extension-pack
 	code --force --install-extension ms-python.python
+	code --force --install-extension ms-python.vscode-pylance
 	code --force --install-extension ms-toolsai.jupyter
 	code --force --install-extension ms-vsliveshare.vsliveshare-pack
 	code --force --install-extension msjsdiag.debugger-for-chrome

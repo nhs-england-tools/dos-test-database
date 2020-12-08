@@ -26,6 +26,8 @@ The following software packages must be installed on your MacBook before proceed
 - [Brew](https://brew.sh/)
 - [GNU make](https://formulae.brew.sh/formula/make)
 
+Before proceeding, please make sure that your macOS operating system provisioned with the `curl -L bit.ly/make-devops-macos | bash` command.
+
 ### Configuration
 
 From within the root directory of your project, please run the following command
@@ -182,7 +184,7 @@ Please, refer to the [Clean Code](https://learning.oreilly.com/library/view/clea
 
 ## Unit tests
 
-When writing or updating unit tests, please always structure them using the 3 A's approach of 'Arrange', 'Act', and 'Assert'. For example:
+When writing or updating unit tests (whether you use Python, Java, Go or shell), please always structure them using the 3 A's approach of 'Arrange', 'Act', and 'Assert'. For example:
 
     @Test
     public void listServicesNullReturn() {

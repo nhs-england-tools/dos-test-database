@@ -1,6 +1,6 @@
 # TODO
 
-## Documentation
+## Documentation
 
 - Quick start guide for dev and ops in the `README.md` file
 - Instructions on how to use the `database` Docker image
