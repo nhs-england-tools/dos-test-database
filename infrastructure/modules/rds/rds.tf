@@ -1,6 +1,6 @@
 module "db" {
   source  = "terraform-aws-modules/rds/aws"
-  version = "~> 2.16"
+  version = "~> 2.20"
 
   ### DB Instance ##############################################################
 
