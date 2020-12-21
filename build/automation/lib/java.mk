@@ -1,8 +1,8 @@
-JAVA_VERSION = 14
+JAVA_VERSION = 15
 
 java-virtualenv: ### Setup Java virtual environment - optional: JAVA_VERSION
 	brew update
-	brew cask install adoptopenjdk$(JAVA_VERSION)
+	brew install --cask adoptopenjdk$(JAVA_VERSION)
 	jenv add $$(/usr/libexec/java_home -v$(JAVA_VERSION))
 	jenv local $(JAVA_VERSION).0
 	sed -i 's;    "java.home":.*;    "java.home": "/Library/Java/JavaVirtualMachines/adoptopenjdk-$(JAVA_VERSION).jdk/Contents/Home",;g' project.code-workspace
@@ -36,3 +36,13 @@ java-add-certificate-to-keystore: ### Add certificate to the Java keystore and i
 	if [ ! -f $(ETC_DIR)/keystore.jks ]; then
 		cp -fv $(JAVA_HOME)/lib/security/cacerts $(ETC_DIR)/keystore.jks
 	fi
+
+java-check-versions: ### Check Java versions alignment
+	echo "java library: $(JAVA_VERSION) (current $(DEVOPS_PROJECT_VERSION))"
+	echo "java library aws: none"
+	echo "java virtual: $$(brew search --cask adoptopenjdk | grep "adoptopenjdk[0-9]*\(\.[0-9]*\(\.[0-9]*\)\?\)\?$$" | grep -o "[0-9]*\(\.[0-9]*\(\.[0-9]*\)\?\)\?$$" | sort -V -r | head -n 1 | sed "s/^[[:space:]]*//g") (latest)"
+	echo "java docker: $$(make docker-repo-list-tags REPO=openjdk | grep -w "^[0-9]*\(\.[0-9]*\(\.[0-9]*\)\?\)\?-alpine$$" | sort -V -r | head -n 1 | sed "s/-alpine//g" | sed "s/^[[:space:]]*//g") (latest)"
+	echo "java aws: unknown"
+
+.SILENT: \
+	java-check-versions

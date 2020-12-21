@@ -247,6 +247,10 @@ _devops-project-clean: ### Clean up the project structure - mandatory: DIR=[proj
 		$(DIR)/build/automation/var/helpers.mk.default \
 		$(DIR)/build/automation/var/override.mk.default \
 		$(DIR)/build/automation/var/platform-texas/account-*.mk \
+		$(DIR)/build/automation/var/platform-texas/default \
+		$(DIR)/build/automation/var/platform-texas/platform-texas-revamp.mk \
+		$(DIR)/build/automation/var/platform-texas/platform-texas.mk \
+		$(DIR)/build/automation/var/platform-texas/revamp \
 		$(DIR)/build/automation/var/profile/*.mk.default \
 		$(DIR)/build/docker/Dockerfile.metadata \
 		$(DIR)/documentation/DevOps-Pipelines.png \
@@ -269,7 +273,7 @@ _devops-synchronise-select-tag-to-install: ### TODO: This is WIP
 	# 	echo "$$choice"
 	# done
 
-devops-setup-aws-accounts: ### Ask user to input valid AWS account IDs to be used by the DevOps automation toolchain scripts
+devops-setup-aws-accounts aws-accounts-setup: ### Ask user to input valid AWS account IDs to be used by the DevOps automation toolchain scripts
 	file=$(DEV_OHMYZSH_DIR)/plugins/$(DEVOPS_PROJECT_NAME)/aws-platform.zsh
 	if [ -f $$file ]; then
 		parent_id=$$(cat $$file | grep "export AWS_ACCOUNT_ID_LIVE_PARENT=" | sed "s/export AWS_ACCOUNT_ID_LIVE_PARENT=//")
@@ -317,7 +321,7 @@ devops-setup-aws-accounts: ### Ask user to input valid AWS account IDs to be use
 		printf "\nERROR: Please, before proceeding run \`make macos-setup\`\n\n"
 	fi
 
-devops-setup-aws-accounts-for-service: ### Ask user to input valid AWS account IDs to be used by the DevOps automation toolchain scripts for service accounts
+devops-setup-aws-accounts-for-service aws-accounts-setup-for-service: ### Ask user to input valid AWS account IDs to be used by the DevOps automation toolchain scripts for service accounts
 	file=$(DEV_OHMYZSH_DIR)/plugins/$(DEVOPS_PROJECT_NAME)/aws-platform-default.zsh
 	[ ! -f $$file ] && cp -vf $(DEV_OHMYZSH_DIR)/plugins/$(DEVOPS_PROJECT_NAME)/aws-platform.zsh $$file
 	printf "\nWhat's the service name?\n\n"
@@ -369,7 +373,7 @@ devops-setup-aws-accounts-for-service: ### Ask user to input valid AWS account I
 	> /dev/null 2>&1
 	printf "Please, run \`reload\` to make sure that this change takes effect\n\n"
 
-devops-switch-aws-accounts: ### Switch among the set of AWS accounts to be used by the DevOps automation toolchain scripts
+devops-switch-aws-accounts aws-accounts-switch: ### Switch among the set of AWS accounts to be used by the DevOps automation toolchain scripts
 	printf "\n"
 	i=1
 	for service in $$(ls -1 $(DEV_OHMYZSH_DIR)/plugins/$(DEVOPS_PROJECT_NAME)/aws-platform-*.zsh | sed "s;.*/plugins/$(DEVOPS_PROJECT_NAME)/aws-platform-;;g" | sed "s;.zsh;;g"); do
@@ -395,13 +399,25 @@ devops-switch-aws-accounts: ### Switch among the set of AWS accounts to be used 
 
 # TODO: Refactor `devops-setup-aws-accounts`, `devops-setup-aws-accounts-for-service` and `devops-switch-aws-accounts`
 
+devops-check-versions: ### Check Make DevOps library versions alignment
+	make \
+		java-check-versions \
+		node-check-versions \
+		postgres-check-versions \
+		python-check-versions \
+		terraform-check-module-versions
+
 # ==============================================================================
 # Project configuration
 
 DEVOPS_PROJECT_ORG := nhsd-exeter
 DEVOPS_PROJECT_NAME := make-devops
 DEVOPS_PROJECT_DIR := $(abspath $(lastword $(MAKEFILE_LIST))/..)
+ifeq (true, $(shell [ ! -f $(PROJECT_DIR)/build/automation/VERSION ] && echo true))
 DEVOPS_PROJECT_VERSION := $(or $(shell git tag --points-at HEAD 2> /dev/null | sed "s/v//g" ||:), $(shell echo $$(git show -s --format=%cd --date=format:%Y%m%d%H%M%S 2> /dev/null ||:)-$$(git rev-parse --short HEAD 2> /dev/null ||:)))
+else
+DEVOPS_PROJECT_VERSION := $(shell cat $(PROJECT_DIR)/build/automation/VERSION)
+endif
 
 BIN_DIR := $(abspath $(DEVOPS_PROJECT_DIR)/bin)
 BIN_DIR_REL := $(shell echo $(BIN_DIR) | sed "s;$(PROJECT_DIR);;g")
@@ -440,6 +456,7 @@ GIT_BRANCH_PATTERN_MAIN := ^(master|main|develop)$$
 GIT_BRANCH_PATTERN_PREFIX := ^(task|story|epic|spike|fix|test|release|migration)
 GIT_BRANCH_PATTERN_SUFFIX := [A-Za-z]{2,5}-[0-9]{1,5}_[A-Za-z0-9_]{4,32}$$
 GIT_BRANCH_PATTERN := $(GIT_BRANCH_PATTERN_MAIN)|$(GIT_BRANCH_PATTERN_PREFIX)/$(GIT_BRANCH_PATTERN_SUFFIX)
+GIT_TAG_PATTERN := [0-9]{12,14}-[a-z]{3,10}
 
 BUILD_ID := $(or $(or $(or $(BUILD_ID), $(CIRCLE_BUILD_NUM)), $(CODEBUILD_BUILD_NUMBER)), 0)
 BUILD_DATE := $(or $(BUILD_DATE), $(shell date -u +"%Y-%m-%dT%H:%M:%S%z"))
@@ -459,7 +476,7 @@ GOSS_PATH := $(BIN_DIR)/goss-linux-amd64
 SETUP_COMPLETE_FLAG_FILE := $(TMP_DIR)/.make-devops-setup-complete
 
 PROFILE := $(or $(PROFILE), local)
-ENVIRONMENT := $(or $(ENVIRONMENT), $(or $(shell ([ $(PROFILE) = local ] && echo local) || ( echo $(BUILD_BRANCH) | grep -Eoq '$(GIT_BRANCH_PATTERN_SUFFIX)' && (echo $(BUILD_BRANCH) | grep -Eo '[A-Za-z]{2,5}-[0-9]{1,5}' | tr '[:upper:]' '[:lower:]') || ([ $(BUILD_BRANCH) = master ] && echo $(PROFILE)))), unknown))
+ENVIRONMENT := $(or $(ENVIRONMENT), $(or $(shell ([ $(PROFILE) = local ] && echo local) || (echo $(BUILD_BRANCH) | grep -Eoq '$(GIT_BRANCH_PATTERN_SUFFIX)' && (echo $(BUILD_BRANCH) | grep -Eo '[A-Za-z]{2,5}-[0-9]{1,5}' | tr '[:upper:]' '[:lower:]') || (echo $(BUILD_BRANCH) | grep -Eoq '^tags/$(GIT_TAG_PATTERN)' && echo $(PROFILE)) || ([ $(BUILD_BRANCH) = master ] && echo $(PROFILE)))), unknown))
 
 # ==============================================================================
 # `make` configuration
@@ -573,27 +590,27 @@ ifneq (0, $(shell xcode-select -p > /dev/null 2>&1; echo $$?))
 $(info )
 $(info $(shell tput setaf 4; echo "Installation of the Xcode Command Line Tools has just been triggered automatically..."; tput sgr0))
 $(info )
-$(error $(shell tput setaf 202; echo "WARNING: Please, before proceeding install the Xcode Command Line Tools"; tput sgr0))
+$(error $(shell tput setaf 202; echo "WARNING: Please, before proceeding install the Xcode Command Line Tools. Then, run the \`curl\` installation command"; tput sgr0))
 endif
 # macOS: Homebrew
 ifneq (0, $(shell which brew > /dev/null 2>&1; echo $$?))
 $(info )
 $(info Run $(shell tput setaf 4; echo '/usr/bin/ruby -e "$$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"'; tput sgr0))
 $(info )
-$(error $(shell tput setaf 202; echo "WARNING: Please, before proceeding install the brew package manager. Copy and paste in your terminal the above command, then execute it"; tput sgr0))
+$(error $(shell tput setaf 202; echo "WARNING: Please, before proceeding install the brew package manager. Copy and paste in your terminal the above command and execute it. If it fails to install try setting your DNS server to 8.8.8.8. Then, run the \`curl\` installation command"; tput sgr0))
 endif
 # macOS: GNU Make
 ifeq (true, $(shell [ ! -f /usr/local/opt/make/libexec/gnubin/make ] && echo true))
 $(info )
 $(info Run $(shell tput setaf 4; echo "brew install make"; tput sgr0))
 $(info )
-$(error $(shell tput setaf 202; echo "WARNING: Please, before proceeding install the GNU make tool. Copy and paste in your terminal the above command, then execute it"; tput sgr0))
+$(error $(shell tput setaf 202; echo "WARNING: Please, before proceeding install the GNU make tool. Copy and paste in your terminal the above command and execute it. Then, run the \`curl\` installation command"; tput sgr0))
 endif
 ifeq (, $(findstring oneshell, $(.FEATURES)))
 $(info )
 $(info Run $(shell tput setaf 4; echo "export PATH=$(PATH)"; tput sgr0))
 $(info )
-$(error $(shell tput setaf 202; echo "WARNING: Please, before proceeding make sure GNU make is included in your \$$PATH. Copy and paste in your terminal the above command, then execute it"; tput sgr0))
+$(error $(shell tput setaf 202; echo "WARNING: Please, before proceeding make sure GNU make is included in your \$$PATH. Copy and paste in your terminal the above command and execute it. Then, run the \`curl\` installation command"; tput sgr0))
 endif
 # macOS: $HOME
 ifeq (true, $(shell echo "$(HOME)" | grep -qE '[ ]+' && echo true))
@@ -623,6 +640,7 @@ endif
 .SILENT: \
 	_devops-synchronise-select-tag-to-install \
 	_devops-test \
+	devops-check-versions \
 	devops-copy \
 	devops-get-variable get-variable \
 	devops-print-variables show-configuration \
