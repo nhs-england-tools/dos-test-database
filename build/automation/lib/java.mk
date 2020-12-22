@@ -1,10 +1,12 @@
 JAVA_VERSION = 15
 
+# TODO: Print Java version in prompt always when `.java-version` file is present, not only if diffrent to global
+
 java-virtualenv: ### Setup Java virtual environment - optional: JAVA_VERSION
 	brew update
 	brew install --cask adoptopenjdk$(JAVA_VERSION)
-	jenv add $$(/usr/libexec/java_home -v$(JAVA_VERSION))
-	jenv local $(JAVA_VERSION).0
+	jenv add /Library/Java/JavaVirtualMachines/adoptopenjdk-$(JAVA_VERSION).jdk/Contents/Home
+	jenv local $(JAVA_VERSION)
 	sed -i 's;    "java.home":.*;    "java.home": "/Library/Java/JavaVirtualMachines/adoptopenjdk-$(JAVA_VERSION).jdk/Contents/Home",;g' project.code-workspace
 
 java-virtualenv-clean: ### Clean up Java virtual environment

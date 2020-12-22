@@ -1,46 +1,19 @@
-module "rds" {
-  source                     = "../../modules/rds"
-  db_instance_identifier     = var.db_instance
-  db_name                    = var.db_name
-  db_password                = random_password.dos_test_database.result
-  db_backup_retention_period = 0
-  db_skip_final_snapshot     = true
-  vpc_security_group         = aws_security_group.rds_postgres_sg.id
-  private_subnets_ids        = data.terraform_remote_state.vpc.outputs.private_subnets
-  tags                       = local.tags
-}
+module "database" {
+  source = "../../modules/rds"
 
-resource "aws_security_group" "rds_postgres_sg" {
-  name   = "${var.db_instance}-db-sg"
-  vpc_id = data.terraform_remote_state.vpc.outputs.vpc_id
-  tags   = local.tags
-}
+  db_instance = var.db_instance
+  db_port     = var.db_port
+  db_name     = var.db_name
+  db_username = var.db_username
+  db_password = var.db_password
 
-resource "aws_security_group_rule" "rds_postgres_ingress_from_eks_worker" {
-  type                     = "ingress"
-  from_port                = var.db_port
-  to_port                  = var.db_port
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.rds_postgres_sg.id
-  source_security_group_id = data.terraform_remote_state.security_groups_k8s.outputs.eks_worker_additional_sg_id
-}
+  context            = local.context
+  vpc_id             = data.terraform_remote_state.networking.outputs.vpc_id
+  subnet_ids         = data.terraform_remote_state.networking.outputs.vpc_intra_subnets
+  security_group_ids = [data.terraform_remote_state.networking.outputs.default_security_group_id]
 
-resource "aws_secretsmanager_secret" "dos_test_database_password" {
-  name                    = "${var.db_instance}/deployment"
-  recovery_window_in_days = 0
-  description             = "Secrets for the DoS Test Database project (${var.db_instance})"
-  tags                    = local.tags
-}
-
-resource "aws_secretsmanager_secret_version" "dos_test_database_password" {
-  secret_id     = aws_secretsmanager_secret.dos_test_database_password.id
-  secret_string = "{\"DB_PASSWORD\": \"${random_password.dos_test_database.result}\"}"
-}
-
-resource "random_password" "dos_test_database" {
-  length      = 32
-  min_upper   = 4
-  min_lower   = 4
-  min_numeric = 4
-  special     = false
+  # # This code block is for the Texas v1
+  # vpc_id             = data.terraform_remote_state.vpc.outputs.vpc_id
+  # subnet_ids         = data.terraform_remote_state.vpc.outputs.private_subnets
+  # security_group_ids = [data.terraform_remote_state.security_groups_k8s.outputs.eks_worker_additional_sg_id]
 }

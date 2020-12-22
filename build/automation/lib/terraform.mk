@@ -1,8 +1,9 @@
 TERRAFORM_DIR = $(INFRASTRUCTURE_DIR)/stacks
 TERRAFORM_DIR_REL = $(shell echo $(TERRAFORM_DIR) | sed "s;$(PROJECT_DIR);;g")
-TERRAFORM_STATE_STORE = $(or $(TEXAS_TERRAFORM_STATE_STORE), state-store-$(ORG_NAME)-$(PROJECT_GROUP_SHORT)-$(AWS_ACCOUNT_NAME))
-TERRAFORM_STATE_LOCK = $(or $(TEXAS_TERRAFORM_STATE_LOCK), state-lock-$(ORG_NAME)-$(PROJECT_GROUP_SHORT)-$(AWS_ACCOUNT_NAME))
+TERRAFORM_STATE_STORE = $(or $(TEXAS_TERRAFORM_STATE_STORE), state-store-$(AWS_ACCOUNT_NAME))
+TERRAFORM_STATE_LOCK = $(or $(TEXAS_TERRAFORM_STATE_LOCK), state-lock-$(AWS_ACCOUNT_NAME))
 TERRAFORM_STATE_KEY = $(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)/$(ENVIRONMENT)
+TERRAFORM_STATE_KEY_SHARED = texas
 TERRAFORM_VERSION = 0.13.5
 
 # ==============================================================================
@@ -98,7 +99,7 @@ terraform-delete-state: ### Delete the Terraform state - mandatory: STACK|STACKS
 terraform-export-variables: ### Get environment variables as TF_VAR_[name] variables - return: [variables export]
 	make terraform-export-variables-from-shell PATTERN="^(AWS|TX|TEXAS|NHSD|TERRAFORM)"
 	make terraform-export-variables-from-shell PATTERN="^(DB|DATABASE|APP|APPLICATION|UI|API|SERVER|HOST|URL)"
-	make terraform-export-variables-from-shell PATTERN="^(PROFILE|ENVIRONMENT|BUILD|PROGRAMME|ORG|SERVICE|PROJECT)" EXCLUDE="^(BUILD_COMMIT_MESSAGE)"
+	make terraform-export-variables-from-shell PATTERN="^(PROFILE|ENVIRONMENT|BUILD|PROGRAMME|ORG|SERVICE|PROJECT)" EXCLUDE="^(BUILD_COMMIT_MESSAGE|BUILD_COMMIT_AUTHOR_NAME)"
 
 terraform-export-variables-from-secret: ### Get secret as TF_VAR_[name] variables - mandatory: NAME=[secret name]; return: [variables export]
 	if [ -n "$(NAME)" ]; then
