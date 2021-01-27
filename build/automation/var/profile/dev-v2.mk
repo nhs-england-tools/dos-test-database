@@ -1,4 +1,4 @@
-include $(VAR_DIR)/platform-texas/v1/account-live-k8s-nonprod.mk
+include $(VAR_DIR)/platform-texas/v2/account-tools.mk
 
 # ==============================================================================
 # Service variables
@@ -9,6 +9,9 @@ DB_PORT = 5432
 DB_NAME = postgres
 DB_USERNAME = postgres
 #DB_PASSWORD = [secret]
+
+# Database instance configuration
+include $(TERRAFORM_DIR)/database/profiles/dev.mk
 
 # ==============================================================================
 # Infrastructure variables

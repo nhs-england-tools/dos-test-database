@@ -1,8 +1,9 @@
 TERRAFORM_DIR = $(INFRASTRUCTURE_DIR)/stacks
 TERRAFORM_DIR_REL = $(shell echo $(TERRAFORM_DIR) | sed "s;$(PROJECT_DIR);;g")
-TERRAFORM_STATE_STORE = $(or $(TEXAS_TERRAFORM_STATE_STORE), state-store-$(ORG_NAME)-$(PROJECT_GROUP_SHORT)-$(AWS_ACCOUNT_NAME))
-TERRAFORM_STATE_LOCK = $(or $(TEXAS_TERRAFORM_STATE_LOCK), state-lock-$(ORG_NAME)-$(PROJECT_GROUP_SHORT)-$(AWS_ACCOUNT_NAME))
+TERRAFORM_STATE_STORE = $(or $(TEXAS_TERRAFORM_STATE_STORE), state-store-$(AWS_ACCOUNT_NAME))
+TERRAFORM_STATE_LOCK = $(or $(TEXAS_TERRAFORM_STATE_LOCK), state-lock-$(AWS_ACCOUNT_NAME))
 TERRAFORM_STATE_KEY = $(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)/$(ENVIRONMENT)
+TERRAFORM_STATE_KEY_SHARED = texas
 TERRAFORM_VERSION = 0.13.5
 
 # ==============================================================================
@@ -16,7 +17,7 @@ terraform-create-module-from-template: ### Create Terraform module from template
 	cp -fv $(LIB_DIR_REL)/terraform/template/.gitignore $(INFRASTRUCTURE_DIR_REL)
 	make -s file-replace-variables-in-dir DIR=$(INFRASTRUCTURE_DIR_REL)/modules/$(TEMPLATE) SUFFIX=_TEMPLATE_TO_REPLACE
 
-terraform-create-stack-from-template: ### Create Terraform stack from template - mandatory: NAME=[new stack name],TEMPLATE=[module template name]
+terraform-create-stack-from-template: ### Create Terraform stack from template - mandatory: NAME=[new stack name],TEMPLATE=[module template name],PROFILE=[profile name]
 	rm -rf $(INFRASTRUCTURE_DIR)/stacks/$(NAME)
 	mkdir -p $(INFRASTRUCTURE_DIR_REL)/stacks
 	cp -rfv \
@@ -25,6 +26,7 @@ terraform-create-stack-from-template: ### Create Terraform stack from template -
 	cp -rfv \
 		$(LIB_DIR_REL)/terraform/template/stacks/*.tf \
 		$(INFRASTRUCTURE_DIR_REL)/stacks/$(NAME)
+	cp -fv $(LIB_DIR_REL)/terraform/template/data-texas-$(TEXAS_VERSION).tf $(INFRASTRUCTURE_DIR_REL)/stacks/$(NAME)
 	cp -fv $(LIB_DIR_REL)/terraform/template/.gitignore $(INFRASTRUCTURE_DIR_REL)
 	make -s file-replace-variables-in-dir DIR=$(INFRASTRUCTURE_DIR_REL)/stacks/$(NAME) SUFFIX=_TEMPLATE_TO_REPLACE
 
@@ -97,7 +99,7 @@ terraform-delete-state: ### Delete the Terraform state - mandatory: STACK|STACKS
 terraform-export-variables: ### Get environment variables as TF_VAR_[name] variables - return: [variables export]
 	make terraform-export-variables-from-shell PATTERN="^(AWS|TX|TEXAS|NHSD|TERRAFORM)"
 	make terraform-export-variables-from-shell PATTERN="^(DB|DATABASE|APP|APPLICATION|UI|API|SERVER|HOST|URL)"
-	make terraform-export-variables-from-shell PATTERN="^(PROFILE|ENVIRONMENT|BUILD|PROGRAMME|ORG|SERVICE|PROJECT)" EXCLUDE="^(BUILD_COMMIT_MESSAGE)"
+	make terraform-export-variables-from-shell PATTERN="^(PROFILE|ENVIRONMENT|BUILD|PROGRAMME|ORG|SERVICE|PROJECT)" EXCLUDE="^(BUILD_COMMIT_MESSAGE|BUILD_COMMIT_AUTHOR_NAME)"
 
 terraform-export-variables-from-secret: ### Get secret as TF_VAR_[name] variables - mandatory: NAME=[secret name]; return: [variables export]
 	if [ -n "$(NAME)" ]; then
@@ -182,7 +184,42 @@ _terraform-delete-state-lock: ### Delete Terraform state lock - mandatory: STACK
 
 # ==============================================================================
 
+terraform-check-module-versions: ### Check Terraform module versions alignment
+	# dynamodb terraform-aws-modules/dynamodb-table/aws
+	name="terraform dynamodb terraform-aws-modules/dynamodb-table/aws"
+	lib_ver=$$(cat $(LIB_DIR_REL)/terraform/template/modules/dynamodb/main.tf | grep 'version[[:space:]]=[[:space:]]"[0-9]*\.[0-9]*\(\.[0-9]*\)\?"' | grep -o "[0-9]*\.[0-9]*\(\.[0-9]*\)\?" | uniq)
+	gh_ver=$$(curl -s https://github.com/terraform-aws-modules/terraform-aws-dynamodb-table/releases | grep "releases/tag" | grep -o "[0-9]*\.[0-9]*\(\.[0-9]*\)\?" | sort -V -r | head -n 1)
+	echo "$$name library: $$lib_ver (current $(DEVOPS_PROJECT_VERSION))"
+	echo "$$name github: $$gh_ver (latest)"
+	# iam-roles terraform-aws-modules/iam/aws
+	name="terraform iam-roles terraform-aws-modules/iam/aws"
+	lib_ver=$$(cat $(LIB_DIR_REL)/terraform/template/modules/iam-roles/main.tf | grep 'version[[:space:]]=[[:space:]]"[0-9]*\.[0-9]*\(\.[0-9]*\)\?"' | grep -o "[0-9]*\.[0-9]*\(\.[0-9]*\)\?" | uniq)
+	gh_ver=$$(curl -s https://github.com/terraform-aws-modules/terraform-aws-iam/releases | grep "releases/tag" | grep -o "[0-9]*\.[0-9]*\(\.[0-9]*\)\?" | sort -V -r | head -n 1)
+	echo "$$name library: $$lib_ver (current $(DEVOPS_PROJECT_VERSION))"
+	echo "$$name github: $$gh_ver (latest)"
+	# rds terraform-aws-modules/rds/aws
+	name="terraform rds terraform-aws-modules/rds/aws"
+	lib_ver=$$(cat $(LIB_DIR_REL)/terraform/template/modules/rds/main.tf | grep 'version[[:space:]]=[[:space:]]"[0-9]*\.[0-9]*\(\.[0-9]*\)\?"' | grep -o "[0-9]*\.[0-9]*\(\.[0-9]*\)\?" | uniq)
+	gh_ver=$$(curl -s https://github.com/terraform-aws-modules/terraform-aws-rds/releases | grep "releases/tag" | grep -o "[0-9]*\.[0-9]*\(\.[0-9]*\)\?" | sort -V -r | head -n 1)
+	echo "$$name library: $$lib_ver (current $(DEVOPS_PROJECT_VERSION))"
+	echo "$$name github: $$gh_ver (latest)"
+	# s3 terraform-aws-modules/s3-bucket/aws
+	name="terraform s3 terraform-aws-modules/s3-bucket/aws"
+	lib_ver=$$(cat $(LIB_DIR_REL)/terraform/template/modules/s3/main.tf | grep 'version[[:space:]]=[[:space:]]"[0-9]*\.[0-9]*\(\.[0-9]*\)\?"' | grep -o "[0-9]*\.[0-9]*\(\.[0-9]*\)\?" | uniq)
+	gh_ver=$$(curl -s https://github.com/terraform-aws-modules/terraform-aws-s3-bucket/releases | grep "releases/tag" | grep -o "[0-9]*\.[0-9]*\(\.[0-9]*\)\?" | sort -V -r | head -n 1)
+	echo "$$name library: $$lib_ver (current $(DEVOPS_PROJECT_VERSION))"
+	echo "$$name github: $$gh_ver (latest)"
+	# vpc terraform-aws-modules/vpc/aws
+	name="terraform vpc terraform-aws-modules/vpc/aws"
+	lib_ver=$$(cat $(LIB_DIR_REL)/terraform/template/modules/vpc/main.tf | grep 'version[[:space:]]=[[:space:]]"[0-9]*\.[0-9]*\(\.[0-9]*\)\?"' | grep -o "[0-9]*\.[0-9]*\(\.[0-9]*\)\?" | uniq)
+	gh_ver=$$(curl -s https://github.com/terraform-aws-modules/terraform-aws-vpc/releases | grep "releases/tag" | grep -o "[0-9]*\.[0-9]*\(\.[0-9]*\)\?" | sort -V -r | head -n 1)
+	echo "$$name library: $$lib_ver (current $(DEVOPS_PROJECT_VERSION))"
+	echo "$$name github: $$gh_ver (latest)"
+
+# ==============================================================================
+
 .SILENT: \
+	terraform-check-module-versions \
 	terraform-export-variables \
 	terraform-export-variables-from-json \
 	terraform-export-variables-from-secret \

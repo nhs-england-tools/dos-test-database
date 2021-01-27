@@ -40,12 +40,12 @@ image: # Create data and database images from the dump file and push them to the
 		image-test \
 		image-push
 
-instance: # Create an instance and populate it from the existing data image - optional: VERSION=[version or tag of the data image, defaults to the just built image],DB_INSTANCE_NAME=[instance name, defaults to "test"]
+instance: # Create an instance and populate it from the existing data image - optional: VERSION=[version or tag of the data image, defaults to the just built image],DB_NAME_SUFFIX=[instance name suffix, defaults to "test"]
 	make \
 		instance-create \
 		instance-populate
 
-clean: # Remove all the resources - optional: DB_INSTANCE_NAME=[instance name, defaults to "test"]
+clean: # Remove all the resources - optional: DB_NAME_SUFFIX=[instance name suffix, defaults to "test"]
 	rm -fv build/docker/data/assets/data/*.sql.gz
 	rm -rf $(TMP_DIR)/*
 	make k8s-undeploy-job \
@@ -122,29 +122,31 @@ image-push: # Push the data and database images to the registry
 	make docker-push NAME=data VERSION=$$(cat build/docker/data/.version)
 	make docker-push NAME=database VERSION=$$(cat build/docker/data/.version)
 
-instance-plan: # Show the creation instance plan - optional: DB_INSTANCE_NAME=[instance name, defaults to "test"]
-	export PROFILE=dev
-	eval "$$(make secret-fetch-and-export-variables NAME=$(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-dev/deployment)"
-	make terraform-plan DB_INSTANCE_NAME=$(or $(DB_INSTANCE_NAME), test)
+# --------------------------------------
 
-instance-create: project-config # Create an instance - optional: DB_INSTANCE_NAME=[instance name, defaults to "test"]
-	export PROFILE=dev
+instance-plan: # Show the creation instance plan - mandatory: PROFILE=[profile name] optional: DB_NAME_SUFFIX=[instance name suffix, defaults to "test"]
+	[ $(PROFILE) == local ] && exit 1
 	eval "$$(make secret-fetch-and-export-variables NAME=$(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-dev/deployment)"
-	make terraform-apply-auto-approve DB_INSTANCE_NAME=$(or $(DB_INSTANCE_NAME), test)
-	make aws-rds-describe-instance DB_INSTANCE_NAME=$(or $(DB_INSTANCE_NAME), test)
+	make terraform-plan DB_NAME_SUFFIX=$(or $(DB_NAME_SUFFIX), test)
 
-instance-destroy: # Destroy the instance - optional: DB_INSTANCE_NAME=[instance name, defaults to "test"]
-	export PROFILE=dev
+instance-create: project-config # Create an instance - mandatory: PROFILE=[profile name] optional: DB_NAME_SUFFIX=[instance name suffix, defaults to "test"]
+	[ $(PROFILE) == local ] && exit 1
 	eval "$$(make secret-fetch-and-export-variables NAME=$(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-dev/deployment)"
-	make terraform-destroy-auto-approve DB_INSTANCE_NAME=$(or $(DB_INSTANCE_NAME), test)
+	make terraform-apply-auto-approve DB_NAME_SUFFIX=$(or $(DB_NAME_SUFFIX), test)
+	make aws-rds-describe-instance DB_NAME_SUFFIX=$(or $(DB_NAME_SUFFIX), test)
 
-instance-populate: # Populate the instance with the data - optional: DB_INSTANCE_NAME=[instance name, defaults to "test"],VERSION=[version or tag of the data image, defaults to the just built image]
-	export PROFILE=dev
+instance-destroy: # Destroy the instance - mandatory: PROFILE=[profile name] optional: DB_NAME_SUFFIX=[instance name suffix, defaults to "test"]
+	[ $(PROFILE) == local ] && exit 1
+	eval "$$(make secret-fetch-and-export-variables NAME=$(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-dev/deployment)"
+	make terraform-destroy-auto-approve DB_NAME_SUFFIX=$(or $(DB_NAME_SUFFIX), test)
+
+instance-populate: # Populate the instance with the data - mandatory: PROFILE=[profile name] optional: DB_NAME_SUFFIX=[instance name suffix, defaults to "test"],VERSION=[version or tag of the data image, defaults to the just built image]
+	[ $(PROFILE) == local ] && exit 1
 	eval "$$(make secret-fetch-and-export-variables NAME=$(PROJECT_GROUP_SHORT)-$(PROJECT_NAME_SHORT)-dev/deployment)"
 	make k8s-deploy-job \
 		STACK=data \
 		SECONDS=600 \
-		DB_INSTANCE_NAME=$(or $(DB_INSTANCE_NAME), test) \
+		DB_NAME_SUFFIX=$(or $(DB_NAME_SUFFIX), test) \
 		VERSION=$(or $(VERSION), $$(cat build/docker/data/.version))
 
 # ==============================================================================

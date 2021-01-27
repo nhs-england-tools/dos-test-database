@@ -14,7 +14,7 @@ module "rds" {
   allocated_storage     = var.db_allocated_storage
   max_allocated_storage = var.db_max_allocated_storage
   engine                = "postgres"
-  engine_version        = "AWS_POSTGRES_VERSION_TEMPLATE_TO_REPLACE"
+  engine_version        = "12.4"
   instance_class        = var.db_instance_class
   storage_encrypted     = true
 
@@ -38,7 +38,7 @@ module "rds" {
 
   # DB Parameter Group
 
-  family = "postgres${AWS_POSTGRES_VERSION_MAJOR_TEMPLATE_TO_REPLACE}"
+  family = "postgres12"
   parameters = [
     {
       name         = "max_connections"
@@ -69,7 +69,7 @@ module "rds" {
 
   # DB Option Group
 
-  major_engine_version = "AWS_POSTGRES_VERSION_MAJOR_TEMPLATE_TO_REPLACE"
+  major_engine_version = "12"
   options = [
   ]
 }

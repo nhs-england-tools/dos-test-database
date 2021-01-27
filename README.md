@@ -8,6 +8,7 @@
     - [Development Requirements](#development-requirements)
     - [Local Environment Configuration](#local-environment-configuration)
     - [Local Project Setup](#local-project-setup)
+  - [Refresh project infrastructure from the template](#refresh-project-infrastructure-from-the-template)
 
 This project provides a way to build a Core DoS database from the test data.
 
@@ -55,3 +56,7 @@ Connect to the database
 - Database name: `pathwaysdos_dev`
 - Username: `release_manager`
 - Password: `postgres`
+
+## Refresh project infrastructure from the template
+
+    make project-create-infrastructure MODULE_TEMPLATE=rds STACK_TEMPLATE=rds STACK=database PROFILE=dev-v2
