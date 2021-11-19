@@ -2,9 +2,9 @@ aws-session-fail-if-invalid: ### Fail if the session variables are not set
 	([ -z "$$AWS_ACCESS_KEY_ID" ] || [ -z "$$AWS_SECRET_ACCESS_KEY" ] || [ -z "$$AWS_SESSION_TOKEN" ]) \
 		&& exit 1 ||:
 
-aws-assume-role-export-variables: ### Get assume role export for the pipline user - optional: AWS_ACCOUNT_ID|PROFILE=[profile name to load relevant platform configuration file]
+aws-assume-role-export-variables: ### Get assume role export for the pipeline user - optional: AWS_ACCOUNT_ID|PROFILE=[profile name to load relevant platform configuration file]
 	if [ "$(AWS_ROLE)" == $(AWS_ROLE_PIPELINE) ]; then
-		if [ $(AWS_ACCOUNT_ID) == "$$(make aws-account-get-id)" ]; then
+		if [ $(AWS_ACCOUNT_ID) == "$$(make aws-account-get-id)" ] && [ $(AWS_ACCOUNT_ID) != $(AWS_ACCOUNT_ID_MGMT) ]; then
 			echo "Already assumed arn:aws:iam::$(AWS_ACCOUNT_ID):role/$(AWS_ROLE)" >&2
 			exit
 		fi
@@ -264,7 +264,7 @@ aws-rds-wait-for-snapshot: ### Wait for RDS snapshot to become available - manda
 			exit 0
 		fi
 		sleep 1s
-		((count++))
+		((count++)) ||:
 	done
 	echo "ERROR: The snapshot has not become available"
 	exit 1
@@ -320,7 +320,7 @@ aws-ecr-get-image-digest: ### Get ECR image digest by matching tag pattern - man
 	file=$(TMP_DIR_REL)/$(@)_$(BUILD_ID)
 	make file-copy-and-replace SRC=$(JQ_DIR_REL)/aws-ecr-get-image-digest.jq DEST=$$file >&2 && trap "rm -f $$file" EXIT
 	make -s docker-run-tools ARGS="$$(echo $(AWSCLI) | grep awslocal > /dev/null 2>&1 && echo '--env LOCALSTACK_HOST=$(LOCALSTACK_HOST)' ||:)" CMD=" \
-		aws ecr list-images \
+		$(AWSCLI) ecr list-images \
 			--repository-name $(shell echo $(REPO) | sed "s;$(AWS_ECR)/;;g") \
 	" | make -s docker-run-tools CMD="jq -rf $$file" | head -n 1
 
@@ -408,7 +408,7 @@ aws-elasticsearch-get-endpoint: ### Get Elasticsearch endpoint - mandatory: DOMA
 			--region $(AWS_REGION) \
 			--query 'DomainStatus.Endpoints.vpc' \
 			--output text \
-	"
+	" | tr -d '\r' | tr -d '\n'
 
 _aws-elasticsearch-register-snapshot-repository: ### Register Elasticsearch snapshot repository - mandatory: ENDPOINT,BUCKET,IAM_ROLE
 	json='{"type":"s3","settings":{"bucket":"$(BUCKET)","region":"$(AWS_REGION)","role_arn":"arn:aws:iam::$(AWS_ACCOUNT_ID):role/$(IAM_ROLE)"}}'
@@ -427,9 +427,84 @@ _aws-elasticsearch-register-snapshot-repository: ### Register Elasticsearch snap
 
 # ==============================================================================
 
+aws-accounts-setup: ### Ask user to input valid AWS account IDs to be used by the DevOps automation toolchain scripts
+	file=$(DEV_OHMYZSH_DIR)/plugins/$(DEVOPS_PROJECT_NAME)/aws-platform.zsh
+	mgmt_id=$$(cat $$file | grep "export AWS_ACCOUNT_ID_MGMT=" | sed "s/export AWS_ACCOUNT_ID_MGMT=//")
+	nonprod_id=$$(cat $$file | grep "export AWS_ACCOUNT_ID_NONPROD=" | sed "s/export AWS_ACCOUNT_ID_NONPROD=//")
+	prod_id=$$(cat $$file | grep "export AWS_ACCOUNT_ID_PROD=" | sed "s/export AWS_ACCOUNT_ID_PROD=//")
+	parent_id=$$(cat $$file | grep "export AWS_ACCOUNT_ID_LIVE_PARENT=" | sed "s/export AWS_ACCOUNT_ID_LIVE_PARENT=//")
+	identities_id=$$(cat $$file | grep "export AWS_ACCOUNT_ID_IDENTITIES=" | sed "s/export AWS_ACCOUNT_ID_IDENTITIES=//")
+	printf "\nPlease, provide valid AWS account IDs or press ENTER to leave it unchanged.\n\n"
+	read -p "AWS_ACCOUNT_ID_MGMT        ($$mgmt_id) : " new_mgmt_id
+	read -p "AWS_ACCOUNT_ID_NONPROD     ($$nonprod_id) : " new_nonprod_id
+	read -p "AWS_ACCOUNT_ID_PROD        ($$prod_id) : " new_prod_id
+	read -p "AWS_ACCOUNT_ID_LIVE_PARENT ($$parent_id) : " new_parent_id
+	read -p "AWS_ACCOUNT_ID_IDENTITIES  ($$identities_id) : " new_identities_id
+	make aws-accounts-create-template-config-file-v1
+	if [ -n "$$new_mgmt_id" ]; then
+		make -s file-replace-content \
+			FILE=$$file \
+			OLD="export AWS_ACCOUNT_ID_MGMT=$$mgmt_id" \
+			NEW="export AWS_ACCOUNT_ID_MGMT=$$new_mgmt_id" \
+		> /dev/null 2>&1
+	fi
+	if [ -n "$$new_nonprod_id" ]; then
+		make -s file-replace-content \
+			FILE=$$file \
+			OLD="export AWS_ACCOUNT_ID_NONPROD=$$nonprod_id" \
+			NEW="export AWS_ACCOUNT_ID_NONPROD=$$new_nonprod_id" \
+		> /dev/null 2>&1
+	fi
+	if [ -n "$$new_prod_id" ]; then
+		make -s file-replace-content \
+			FILE=$$file \
+			OLD="export AWS_ACCOUNT_ID_PROD=$$prod_id" \
+			NEW="export AWS_ACCOUNT_ID_PROD=$$new_prod_id" \
+		> /dev/null 2>&1
+	fi
+	if [ -n "$$new_parent_id" ]; then
+		make -s file-replace-content \
+			FILE=$$file \
+			OLD="export AWS_ACCOUNT_ID_LIVE_PARENT=$$parent_id" \
+			NEW="export AWS_ACCOUNT_ID_LIVE_PARENT=$$new_parent_id" \
+		> /dev/null 2>&1
+	fi
+	if [ -n "$$new_identities_id" ]; then
+		make -s file-replace-content \
+			FILE=$$file \
+			OLD="export AWS_ACCOUNT_ID_IDENTITIES=$$identities_id" \
+			NEW="export AWS_ACCOUNT_ID_IDENTITIES=$$new_identities_id" \
+		> /dev/null 2>&1
+	fi
+	printf "\nFILE: $$file\n"
+	tput setaf 4
+	cat $$file
+	tput setaf 2
+	printf "Please, run \`reload\` to make sure that this change takes effect!\n\n"
+	tput sgr0
+
+aws-accounts-create-template-config-file-v1: ### Create AWS accounts variables template config file for Texas v1
+	(
+		echo
+		echo "# export: AWS platform variables"
+		echo "export AWS_ACCOUNT_ID_MGMT=000000000000"
+		echo "export AWS_ACCOUNT_ID_NONPROD=000000000000"
+		echo "export AWS_ACCOUNT_ID_PROD=000000000000"
+		echo "export AWS_ACCOUNT_ID_LIVE_PARENT=000000000000"
+		echo "export AWS_ACCOUNT_ID_IDENTITIES=000000000000"
+		echo
+		echo "# export: Texas platform variables"
+		echo "export TEXAS_TLD_NAME=example.uk"
+		echo
+	) > $(DEV_OHMYZSH_DIR)/plugins/$(DEVOPS_PROJECT_NAME)/aws-platform.zsh
+
+# ==============================================================================
+
 .SILENT: \
 	aws-account-check-id \
 	aws-account-get-id \
+	aws-accounts-create-template-config-file-v1 \
+	aws-accounts-setup \
 	aws-assume-role-export-variables \
 	aws-cognito-get-client-id \
 	aws-cognito-get-client-secret \

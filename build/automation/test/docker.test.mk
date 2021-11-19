@@ -28,16 +28,18 @@ test-docker:
 		test-docker-get-variables-from-file \
 		test-docker-run \
 		test-docker-run-composer \
-		test-docker-run-dotnet \
 		test-docker-run-gradle \
 		test-docker-run-mvn \
 		test-docker-run-node \
 		test-docker-run-postman \
-		test-docker-run-pulumi \
 		test-docker-run-python-single-cmd \
 		test-docker-run-python-multiple-cmd \
 		test-docker-run-python-multiple-cmd-pip-install \
 		test-docker-run-terraform \
+		test-docker-run-terraform-tfsec \
+		test-docker-run-terraform-checkov \
+		test-docker-run-terraform-compliance \
+		test-docker-run-config-lint \
 		test-docker-run-tools-single-cmd \
 		test-docker-run-tools-multiple-cmd \
 		test-docker-run-pass-variables \
@@ -55,6 +57,7 @@ test-docker:
 		test-docker-compose-parallel-execution \
 		test-docker-clean \
 		test-docker-prune \
+		test-docker-repo-list-tags \
 	)
 	for test in $${tests[*]}; do
 		mk_test_initialise $$test
@@ -246,17 +249,6 @@ test-docker-run-composer:
 	# assert
 	mk_test "0 -lt $$output"
 
-test-docker-run-dotnet:
-	# arrange
-	make docker-config
-	# act
-	output=$$(
-		make -s docker-run-dotnet \
-			CMD="--info" \
-		| grep -Eo ".NET Core SDK" | wc -l)
-	# assert
-	mk_test "0 -lt $$output"
-
 test-docker-run-gradle:
 	# arrange
 	make docker-config
@@ -298,17 +290,6 @@ test-docker-run-postman:
 		make -s docker-run-postman \
 			CMD="--version" \
 		| grep -Eo "[0-9]+\.[0-9]+\.[0-9]+" | wc -l)
-	# assert
-	mk_test "0 -lt $$output"
-
-test-docker-run-pulumi:
-	# arrange
-	make docker-config
-	# act
-	output=$$(
-		make -s docker-run-pulumi \
-			CMD="pulumi version" \
-		| grep -Eo "v[0-9]+\.[0-9]+\.[0-9]+" | wc -l)
 	# assert
 	mk_test "0 -lt $$output"
 
@@ -356,6 +337,50 @@ test-docker-run-terraform:
 	# assert
 	mk_test "0 -lt $$output"
 
+test-docker-run-terraform-tfsec:
+	# arrange
+	make docker-config
+	# act
+	output=$$(
+		make -s docker-run-terraform-tfsec \
+			DIR="build/automation/lib/terraform/template/modules/s3" \
+		| grep -Eo "No problems detected" | wc -l)
+	# assert
+	mk_test "1 -eq $$output"
+
+test-docker-run-terraform-checkov:
+	# arrange
+	make docker-config
+	# act
+	output=$$(
+		make -s docker-run-terraform-checkov \
+			DIR="build/automation/lib/terraform/template/modules/s3" \
+		| grep -Eo "By bridgecrew" | wc -l)
+	# assert
+	mk_test "1 -eq $$output"
+
+test-docker-run-terraform-compliance:
+	# arrange
+	make docker-config
+	# act
+	output=$$(
+		make -s docker-run-terraform-compliance \
+			CMD="--version" \
+		| grep -Eo "terraform-compliance" | wc -l)
+	# assert
+	mk_test "1 -eq $$output"
+
+test-docker-run-config-lint:
+	# arrange
+	make docker-config
+	# act
+	output=$$(
+		make -s docker-run-config-lint \
+			CMD="--version" \
+		| grep -Eo "[0-9]+\.[0-9]+\.[0-9]+" | wc -l)
+	# assert
+	mk_test "1 -eq $$output"
+
 test-docker-run-tools-single-cmd:
 	# arrange
 	make docker-config
@@ -400,7 +425,7 @@ test-docker-run-specify-image:
 	# arrange
 	make docker-config
 	# act
-	output=$$(make -s docker-run-python IMAGE=python:3.7.0 CMD="python --version" | grep "3.7.0" | wc -l)
+	output=$$(make -s docker-run-python IMAGE=python:$(PYTHON_VERSION) CMD="python --version" | grep "$(PYTHON_VERSION)" | wc -l)
 	# assert
 	mk_test "1 -eq $$output"
 
@@ -524,11 +549,17 @@ test-docker-compose-parallel-execution:
 	docker rm --force --volumes $$(docker ps --all --filter "name=.*-$(BUILD_ID)_[1|2]" --quiet) #2> /dev/null ||:
 	docker network rm $$(docker network ls --filter "name=$(DOCKER_NETWORK)_[1|2]" --quiet)
 
+test-docker-repo-list-tags:
+	# act
+	output=$$(make docker-repo-list-tags REPO=python | wc -l)
+	# assert
+	mk_test "100 -lt $$output"
+
 # ==============================================================================
 
 TEST_DOCKER_COMPOSE_YML = $(TMP_DIR)/docker-compose.yml
 TEST_DOCKER_COMPOSE_YML:
-	echo 'version: "3.7"' > $(TEST_DOCKER_COMPOSE_YML)
+	echo 'version: "3.9"' > $(TEST_DOCKER_COMPOSE_YML)
 	echo "services:" >> $(TEST_DOCKER_COMPOSE_YML)
 	echo "  alpine:" >> $(TEST_DOCKER_COMPOSE_YML)
 	echo "    image: alpine:latest" >> $(TEST_DOCKER_COMPOSE_YML)

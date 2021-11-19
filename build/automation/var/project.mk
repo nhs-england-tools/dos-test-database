@@ -15,6 +15,8 @@ SERVICE_TAG_COMMON = texas
 DOCKER_REPOSITORIES =
 SSL_DOMAINS_PROD =
 
+PROJECT_TECH_STACK_LIST = shell,terraform
+
 # ==============================================================================
 
 DOS_DATABASE_VERSION := 5-4-0
