@@ -19,4 +19,4 @@ PROJECT_TECH_STACK_LIST = shell,terraform
 
 # ==============================================================================
 
-DOS_DATABASE_VERSION := 5-4-0
+DOS_DATABASE_VERSION := 5-4-0-clean-PU

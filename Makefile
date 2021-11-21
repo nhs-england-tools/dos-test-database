@@ -8,7 +8,7 @@ download: project-config # Download DoS database dump file
 	[ -f build/docker/data/assets/data/50-dos-database-dump.sql.gz ] && exit 0
 	eval $$(make aws-assume-role-export-variables)
 	make aws-s3-download \
-		URI=nhsd-texasplatform-service-dos-lk8s-nonprod/dos-pg-dump-$(DOS_DATABASE_VERSION)-clean-PU.sql.gz \
+		URI=nhsd-texasplatform-service-dos-lk8s-nonprod/dos-pg-dump-$(DOS_DATABASE_VERSION).sql.gz \
 		FILE=build/docker/data/assets/data/50-dos-database-dump.sql.gz
 	make _fix
 
