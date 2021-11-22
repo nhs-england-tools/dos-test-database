@@ -1,21 +1,24 @@
-# service-roles
+# Terraform Stack: `service-roles`
 
 ## Description
 
 This stack provisions a number of AWS IAM roles to support a product.
 
+## Dependencies
+
+- `terraform-state` stack
+- This stack can be executed with any of the three profiles i.e. `tools`, `tools-nonprod` and `tools-prod` against the linked AWS account in each individual profile.
+
 ## Usage
 
 ### Create an operational stack from the template
 
-    make project-create-infrastructure MODULE_TEMPLATE=iam-roles STACK_TEMPLATE=service-roles
     make project-create-profile NAME=tools
-    cat << HEREDOC >> build/automation/var/profile/tools.mk
-    TERRAFORM_NHSD_IDENTITIES_ACCOUNT_ID = 123456789012
-    HEREDOC
+    make project-create-infrastructure MODULE_TEMPLATE=iam-roles STACK_TEMPLATE=service-roles PROFILE=tools
 
 ### Provision the stack
 
+    make terraform-plan STACK=service-roles PROFILE=tools
     make terraform-apply-auto-approve STACK=service-roles PROFILE=tools
 
 ## Links

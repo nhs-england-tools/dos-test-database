@@ -12,6 +12,7 @@ test-terraform:
 		test-terraform-export-variables-from-shell-pattern-and-vars \
 		test-terraform-export-variables-from-json \
 		test-terraform-fmt \
+		test-terraform-validate \
 		test-terraform-plan-before-apply \
 		test-terraform-apply \
 		test-terraform-plan-after-apply \
@@ -28,6 +29,8 @@ test-terraform:
 
 test-terraform-setup:
 	make localstack-start
+	find $(TEST_DIR)/terraform -type d -name '.terraform' -print0 | xargs -0 rm -rfv
+	find $(TEST_DIR)/terraform -type f -name '*terraform.tfstate*' -print0 | xargs -0 rm -rfv
 	# Prerequisites
 	make docker-pull NAME=tools VERSION=$(DOCKER_LIBRARY_TOOLS_VERSION)
 
@@ -47,7 +50,7 @@ test-terraform-export-variables:
 	# act
 	export=$$(make terraform-export-variables)
 	# assert
-	count=$$(echo "$$export" | grep -E "TF_VAR_aws_[a-z_]*=value" | wc -l)
+	count=$$(echo "$$export" | grep -E "TF_VAR_aws_[a-z_]*='value'" | wc -l)
 	mk_test "3 = $$count"
 
 test-terraform-export-variables-from-secret:
@@ -59,8 +62,7 @@ test-terraform-export-variables-from-secret:
 	# act
 	export=$$(make terraform-export-variables-from-json JSON="$$secret")
 	# assert
-	hash=$$(echo -e "export TF_VAR__test_db_username=admin\nexport TF_VAR__test_db_password=secret" | md5sum | awk '{ print $$1 }')
-	mk_test "$$hash = $$(echo "$$export" | md5sum | awk '{ print $$1 }')"
+	mk_test "true = $$(echo "$$export" | grep -q "export TF_VAR__test_db_username='admin'" && echo $$export | grep -q "export TF_VAR__test_db_password='secret'" && echo true)"
 
 test-terraform-export-variables-from-shell-vars:
 	# arrange
@@ -103,8 +105,7 @@ test-terraform-export-variables-from-json:
 	# act
 	export=$$(make terraform-export-variables-from-json JSON="$$json")
 	# assert
-	hash=$$(echo -e "export TF_VAR_db_username=admin\nexport TF_VAR_db_password=secret" | md5sum | awk '{ print $$1 }')
-	mk_test "$$hash = $$(echo "$$export" | md5sum | awk '{ print $$1 }')"
+	mk_test "true = $$(echo "$$export" | grep -q "TF_VAR_db_username='admin'" && echo "$$export" | grep -q "export TF_VAR_db_password='secret'" && echo true)"
 
 test-terraform-fmt:
 	# arrange
@@ -114,6 +115,9 @@ test-terraform-fmt:
 	# assert
 	make TEST_TERRAFORM_FORMATTING_OUTPUT
 	mk_test "$$(md5sum $(TEST_TERRAFORM_FORMATTING_OUTPUT) | awk '{ print $$1 }')" = "$$(md5sum $(TEST_TERRAFORM_FORMATTING_INPUT) | awk '{ print $$1 }')"
+
+test-terraform-validate:
+	mk_test_skip
 
 test-terraform-plan-before-apply:
 	# act

@@ -4,8 +4,8 @@
 
 - Restart your macOS
 - Fully enable the `Avast Security` antivirus software
-- Open the `Docker Desktop` application and make sure it always starts when you log in and has sufficient resources allocated. e.g. at least 4GB memory and 4 CPUs
-- Use the `Spectacle`, `KeepingYouAwake` and `CheatSheet` applications to improve the ergonomics
+- Open the `Docker Desktop` application and make sure it always starts when you log in and has sufficient resources allocated. e.g. at least 4GB memory and 4 CPUs, about 100GB of storage space
+- Use the `Spectacle` and `KeepingYouAwake` applications to improve the ergonomics
 - Go to System Preferences > Security & Privacy > Privacy > Accessibility > [ Add iTerm to the list ]
 - Go to System Preferences > Security & Privacy > Privacy > Full Disk Access > [ Add iTerm to the list ]
 - If you can no longer open Java-based applications (e.g. DBeaver) due to the JDK execution error, follow the steps below
@@ -18,7 +18,7 @@
 - Your AWS credentials are stored in `~/.aws/credentials`, check it
 - Run `make devops-setup-aws-accounts` or edit `~/.dotfiles/oh-my-zsh/plugins/make-devops/aws-platform.zsh` to set correct AWS platform variables, i.e. `AWS_ACCOUNT_ID_LIVE_PARENT`, `AWS_ACCOUNT_ID_MGMT`, `AWS_ACCOUNT_ID_NONPROD`, `AWS_ACCOUNT_ID_PROD`
 - Place the Kubernetes NONPROD configuration as `~/.kube/configs/lk8s-nonprod-kubeconfig` file and the `KUBECONFIG` environment variable will be set automatically when your shell session reloads
-- Follow [this](https://github.com/nhsd-exeter/make-devops/blob/master/CONTRIBUTING.md#signing-your-git-commitss) manual to set up signing your Git commits
+- Follow [this](https://github.com/nhsd-exeter/make-devops/blob/master/documentation/CONTRIBUTING.md#signing-your-git-commits) manual to set up signing your Git commits
 - From now on use `iTerm` as your terminal, `Visual Studio Code` as your IDE and `Firefox` for web development. These tools have been configured to support development in
   - Node
   - Python
@@ -51,12 +51,16 @@
 
 ## Starting from scratch
 
-- Turn off and then on your MacBook and immediately press and hold Command-R to enter the macOS recovery mode
-- Erase the disk and set it to APFS (Case-sensitive, Encrypted), disk name "System"
+- Turn off and then on your MacBook and immediately press and hold
+  - Command-R to enter the macOS Recovery mode for a MacBook with an Intel-based processor
+  - The power button until you see "Loading startup options" then via Options enter the macOS Recovery mode for a MacBook with an M1 processor
+- Within the Disk Utility application erase the Internal disk and set it to "APFS (Case-sensitive, Encrypted)", with the disk name "System"
 - Reinstall the operating system
+- If you are presented with the following message "You may not install to this volume because it has a disk password" go back to the Disk Utility application and use "APFS (Case-sensitive)" configuration instead. The disk encryption will be set up later
 - Create the administrator account
 - Create a developer account with the administrative privileges
 - Log in as the developer and register your Apple ID
+- If disk encryption hasn't been set up yet, now is the time - go to the System Preferences > Security & Privacy > FileVault > [ Turn On FileVault ]
 - Perform all system updates
 - Go to System Preferences > Software Update > [ Tick all the checkboxes ]
 - Go to System Preferences > Sharing > Computer Name > [ Set name to macos-xxxxxx ]
@@ -64,9 +68,9 @@
   - Xcode Command Line Tools
   - Homebrew
   - GNU Make
+- If the network connectivity fails in random places, especially while installing or updating the Homebrew package manager, try to set your DNS server to 8.8.8.8 which may solve the issue. This may be the case for the UK-based Virgin Media broadband provider.
+- Please, follow the instructions provided by the script and execute them from the command-line to satisfy the dependencies
 - Go to System Preferences > Security & Privacy > General > [ Enable software ] - you may need to re-run installation of the failed software
-
-Please, follow the instructions provided by the script and execute them from the command-line to satisfy the dependencies. If the network connectivity fails in random places, especially while installing or updating the Homebrew package manager, try to set your DNS server to 8.8.8.8 which may solve the issue.
 
 ---
 

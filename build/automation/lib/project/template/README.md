@@ -4,12 +4,16 @@
 
 - [PROJECT_NAME_TO_REPLACE](#project_name_to_replace)
   - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
   - [Quick Start](#quick-start)
     - [Development Requirements](#development-requirements)
     - [Local Environment Configuration](#local-environment-configuration)
     - [Local Project Setup](#local-project-setup)
+  - [Contributing](#contributing)
   - [Development](#development)
   - [Testing](#testing)
+    - [Test data and mock services](#test-data-and-mock-services)
+    - [Manual check](#manual-check)
   - [Deployment](#deployment)
     - [Artefact Versioning](#artefact-versioning)
     - [CI/CD Pipelines](#cicd-pipelines)
@@ -44,30 +48,58 @@
     - [Communications](#communications)
     - [Documentation](#documentation)
 
+## Overview
+
 A few sentences what business problem this project solves...
 
 ## Quick Start
 
 ### Development Requirements
 
-- macOS operating system provisioned with the `curl -L bit.ly/make-devops-macos | bash` command
+- macOS operating system provisioned with the `curl -L bit.ly/make-devops-macos-setup | bash` command
 - `iTerm2` command-line terminal and `Visual Studio Code` source code editor, which will be installed automatically for you in the next steps
-- Before starting any work, please read [CONTRIBUTING.md](build/automation/lib/project/template/CONTRIBUTING.md)
 
 ### Local Environment Configuration
+
+Clone the repository
 
     git clone [project-url]
     cd ./[project-dir]
 
+The following is equivalent to the `curl -L bit.ly/make-devops-macos-setup | bash` command. If that step has already been done it can be omitted at this point
+
     make macos-setup
+
+There are essential configuration options that **must** be set before proceeding any further. As a minimum the following command will ensure that tooling like `docker` and `git` are going to operate as expected, including local secret scanning and code formatting are enabled
+
+    make setup
+
+Please, ask one of your colleagues for the AWS account numbers used by the project. The next command will prompt you to provide them. This information can be sourced from a properly set up project by running `make show-configuration | grep ^AWS_ACCOUNT_ID_`
+
     make devops-setup-aws-accounts
+
+Generate and trust a self-signed certificate that will be used locally to enable encryption in transit
+
     make trust-certificate
 
 ### Local Project Setup
 
+    make [? python|java]-virtualenv
     make build
     make start log
     open https://ui.project.local:8443
+
+## Contributing
+
+Here is the list of the development practices that have to be followed by the team and the individual members:
+
+- Only use single canonical branch **main**. Any intermediate branch significantly increases the maintenance overhead of the repository.
+- Apply the git rebase workflow and never merge from main to a task branch. Follow the **squash-rebase-merge** pattern to keep the history linear and clean.
+- Cryptographically sign your commits using **gpg** to ensure its content have not been tampered with.
+- Format the summary message of your pull request (merge request) using the following pattern **"JIRA-XXX Summary of the change being made"** for complines and clarity as well as to enable tooling to produce release notes automatically.
+- Announce your PR/MR on the development Slack channel to allow any team member to review it and to share the knowledge. A change can be merged only if all comments have been addressed and it has been **approved by at least one peer**. Make good use of paring/mobbing/swarming practices for collaborative coding.
+
+Before starting any work, please read [CONTRIBUTING.md](documentation/CONTRIBUTING.md) for more detailed instructions.
 
 ## Development
 
@@ -75,18 +107,9 @@ A few sentences what business problem this project solves...
   - Connect to a local database
   - Interact with mock components
   - Switch each individual component to the dev mode
-- Branching strategy
-  - [Trunk-based development](https://trunkbaseddevelopment.com/)
-  - Naming convention `^(master|main|develop)$|^(task|story|epic|spike|fix|test|release|migration)/[A-Za-z]{2,5}-[0-9]{1,5}_[A-Za-z0-9_]{4,32}$`
-- Git hooks located in `build/automation/etc/githooks/scripts`
-  - `branch-name-pre-commit.sh`
-  - `editorconfig-pre-commit.sh`
-  - `git-secret-pre-commit.sh`
-  - `terraform-format-pre-commit.sh`
 - Code formatting
 - Code quality
-- Reference the [TODO.md](build/automation/lib/project/template/TODO.md) file
-- Reference the [CONTRIBUTING.md](build/automation/lib/project/template/CONTRIBUTING.md) file
+- Reference the [TODO.md](documentation/TODO.md) file
 - Provide guidance on how to use feature toggles and branching by abstraction
 
 ## Testing
@@ -101,7 +124,18 @@ List all the type of test suites included and provide instructions how to execut
 - Security
 - Smoke
 
-How the test data set is produced
+How to run test suite in the pipeline
+
+### Test data and mock services
+
+- How the test data set is produced
+- Are there any mock services in place
+
+### Manual check
+
+Here are the steps to perform meaningful local system check:
+
+- Log in to the system using a well known username role
 
 ## Deployment
 
@@ -120,13 +154,15 @@ List all the pipelines and their purpose
 
 Reference the [jenkins/README.md](build/automation/lib/jenkins/README.md) file
 
+<img src="./documentation/diagrams/DevOps-Pipelines.png" width="1024" /><br /><br />
+
 ### Deployment From the Command-line
 
     make deploy PROFILE=dev
 
 ### Secrets
 
-Where are the secrets located, i.e. AWS Secrets Manager, under the `$(PROJECT_ID)-$(PROFILE)/deployment` secret name
+Where are the secrets located, i.e. AWS Secrets Manager, under the `$(PROJECT_ID)-$(PROFILE)/deployment` secret name and variable `$(DEPLOYMENT_SECRETS)` should be set accordingly.
 
 ### AWS Access
 
@@ -141,27 +177,35 @@ MFA to the right AWS account using the following command
 
 #### System Context Diagram
 
-Include a link to the [C4 model](https://c4model.com/) System Context diagram
+Include an image of the [C4 model](https://c4model.com/) System Context diagram exported as a `.png` file from the draw.io application.
+
+<img src="./documentation/diagrams/C4model-SystemContext.png" width="1024" /><br /><br />
 
 #### Container Diagram
 
-Include a link to the [C4 model](https://c4model.com/) Container diagram
+Include an image of the [C4 model](https://c4model.com/) Container diagram exported as a `.png` file from the draw.io application.
+
+<img src="./documentation/diagrams/C4model-Container.png" width="1024" /><br /><br />
 
 #### Component Diagram
 
-Include a link to the [C4 model](https://c4model.com/) Component diagram
+Include an image of the [C4 model](https://c4model.com/) Component diagram exported as a `.png` file from the draw.io application.
+
+<img src="./documentation/diagrams/C4model-Component.png" width="1024" /><br /><br />
 
 #### Processes and Data Flow
 
-Include a link to the Processes and Data Flow diagram
+Include an image of the Processes and Data Flow diagram
 
 #### Infrastructure
 
-Include a link to the Infrastructure diagram. Please, be aware that any sensitive information that can be potentially misused either directly or indirectly must not be stored and accessible publicly. This could be IP addresses, domain names or detailed infrastructure information.
+Include an image of the Infrastructure diagram. Please, be aware that any sensitive information that can be potentially misused either directly or indirectly must not be stored and accessible publicly. This could be IP addresses, domain names or detailed infrastructure information.
+
+<img src="./documentation/diagrams/Infrastructure-Component.png" width="1024" /><br /><br />
 
 #### Networking
 
-Include a link to the Networking diagram. Please, be aware that any sensitive information must not be stored and accessible publicly. This could be IP addresses, domain names or detailed networking information.
+Include an image of the Networking diagram. Please, be aware that any sensitive information must not be stored and accessible publicly. This could be IP addresses, domain names or detailed networking information.
 
 ### Integration
 
@@ -259,10 +303,14 @@ Are there any auditing requirements in accordance with the data retention polici
 
 List all the environments and their relation to profiles
 
-- dev
-- test
-- demo
-- live
+- Development
+  - Profile: `dev`
+  - URL address: [https://?.k8s-dev.texasplatform.uk/](https://?.k8s-dev.texasplatform.uk/)
+  - Username: ?@nhs.net
+  - Password: _stored in the AWS Secrets Manager `?`_
+- Test
+- Demo
+- Live
 
 Describe how to provision and deploy to a task branch environment
 
@@ -275,10 +323,12 @@ List all the operational runbooks
 ### Communications
 
 - Slack channels
-  - Development, e.g. `[team-name]-dev`
-  - Service status, e.g. `[team-name]-status`
-- Email addresses in use
-  - Application mailbox, e.g. `[product.name]@nhs.net`
+  - Development, e.g. `[service-name]-development`
+  - CI/CD and data pipelines, processes, e.g. `[service-name]-automation`
+  - Service status, e.g. `[service-name]-status`
+- Email addresses in use, e.g. `[service.name]@nhs.net`
+
+All of the above can be service, product, application or even team specific.
 
 ### Documentation
 
