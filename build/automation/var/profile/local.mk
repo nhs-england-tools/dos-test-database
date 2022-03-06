@@ -10,3 +10,5 @@ DB_PASSWORD = postgres
 DB_DOS_NAME = pathwaysdos_dev
 DB_DOS_USERNAME = release_manager
 DB_DOS_PASSWORD = postgres
+
+DB_DOS_SCRIPTS_TO_RUN =

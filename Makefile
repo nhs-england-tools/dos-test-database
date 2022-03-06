@@ -73,7 +73,7 @@ _image-create-wait:
 		exists=$$($(PSQL) "select to_regclass('_metadata')" 2> /dev/null | tr -d '[:space:]')
 		if [ -n "$$exists" ]; then
 			count=$$($(PSQL) "select count(*) from _metadata where label = 'created'" 2> /dev/null | tr -d '[:space:]')
-			if [ "$$count" -eq 1 ]; then
+			if [ "$$count" == 1 ]; then
 				break
 			fi
 		fi
@@ -101,7 +101,7 @@ image-test: # Test database image
 		exists=$$($(PSQL) "select to_regclass('_metadata')" 2> /dev/null | tr -d '[:space:]')
 		if [ -n "$$exists" ]; then
 			count=$$($(PSQL) "select count(*) from _metadata where label = 'created'" 2> /dev/null | tr -d '[:space:]')
-			if [ "$$count" -eq 1 ]; then
+			if [ "$$count" == 1 ]; then
 				break
 			fi
 		fi
