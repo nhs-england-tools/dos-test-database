@@ -1,4 +1,11 @@
-# TODO
+# Todo
+
+## Table of contents
+
+- [Todo](#todo)
+  - [Table of contents](#table-of-contents)
+  - [Documentation](#documentation)
+  - [General](#general)
 
 ## Documentation
 

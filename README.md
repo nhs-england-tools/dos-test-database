@@ -65,6 +65,8 @@ This produces `dtdb/database` Docker image that can be started up using the foll
       000000000000.dkr.ecr.eu-west-2.amazonaws.com/uec-tools/dtdb/database:latest
     docker logs --follow db-dos
 
+You may need to replace `000000000000` with your AWS account number.
+
 Connect to the database
 
 - Host: `localhost`

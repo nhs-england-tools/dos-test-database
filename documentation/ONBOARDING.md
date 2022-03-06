@@ -1,6 +1,7 @@
 # Onboarding
 
 ## Table of Contents
+
 - [Onboarding](#onboarding)
   - [Table of Contents](#table-of-contents)
   - [List of things to do](#list-of-things-to-do)
@@ -23,26 +24,22 @@ This is a generic onboarding template that can be used by any team to help to br
 ### Corporate Accounts
 
 - Access to the NHSmail account, which is the prerequisite to all the others
-- VDI
-- Teams
-- Slack
-- Trello
-- JIRA
-- Confluence
-- Cherwell
-- Pluralsight
-- Safari Books Online
+- VDI to access Cherwell
+- Microsoft Teams - DoS, SF, PU, Tech Strategy
+- Slack - A2SI and Texas workspaces
+- [JIRA](https://nhsd-jira.digital.nhs.uk/)
+- [Confluence](https://nhsd-confluence.digital.nhs.uk/)
 
 ### Technical Setup
 
-- MacBook configuration
+- macOS [configuration](https://github.com/nhsd-exeter/make-devops/blob/main/build/automation/lib/macos/README.md)
 - CPaaS Texas VPN access
-- GitLab
-- GitHub
-- Jenkins
-- Splunk
-- Instana
-- AWS
+- [GitLab](https://gitlab.mgmt.texasplatform.uk/)
+- [Jenkins](https://jenkins.mgmt.texasplatform.uk/)
+- [Instana](https://instana-server.mgmt.texasplatform.uk/)
+- [GitHub](https://github.com/nhsd-exeter)
+- [Splunk](https://nhsdigital.splunkcloud.com/)
+- AWS - ensure MFA is enabled
 - Git projects
 - Documentation
   - [Make DevOps](https://github.com/nhsd-exeter/make-devops)
@@ -58,7 +55,7 @@ This is a generic onboarding template that can be used by any team to help to br
 
 ### Before joining
 
-- Get a MacBook, minimum Intel Core i5 4 cores processor and 16GM memory
+- Get a MacBook, minimum Intel Core i5 4-core processor and 16GM memory
 - Install the latest version of the macOS operating system and all the updates unless there are known compatibility issues, usually it is a good practice to wait a couple of weeks after a new major version release
 - Encrypt the disk storage
 - Request the NHSmail account, usually this will be done by a Delivery Manager
